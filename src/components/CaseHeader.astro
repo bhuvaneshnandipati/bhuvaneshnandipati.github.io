@@ -1,0 +1,50 @@
+---
+import type { Project } from '../data/projects';
+interface Props { project: Project; reports: { href: string; label: string }[] }
+const { project: p, reports } = Astro.props;
+---
+
+<header class="case-hd wrap">
+  <nav class="crumbs mono" aria-label="Breadcrumb">
+    <a href="/">Index</a><span aria-hidden="true">/</span><a href="/#work">Case studies</a><span aria-hidden="true">/</span><span aria-current="page">{p.index}</span>
+  </nav>
+  <div class="case-hd__grid">
+    <div class="case-hd__main">
+      <p class="label case-hd__disc"><span class="case-hd__idx">{p.index}</span>{p.discipline}</p>
+      <h1 class="case-hd__title">{p.title}</h1>
+      <p class="lede case-hd__stand">{p.standfirst}</p>
+    </div>
+    <table class="tblock" aria-label="Project summary">
+      <tbody>
+        <tr><th scope="row">Project</th><td>{p.context}</td></tr>
+        {p.year && <tr><th scope="row">Year</th><td>{p.year}</td></tr>}
+        <tr><th scope="row">Tools</th><td>{p.tools.join(' · ')}</td></tr>
+        <tr><th scope="row">Status</th><td><span class="tblock__dot" aria-hidden="true"></span>{p.status}</td></tr>
+        <tr><th scope="row">Headline</th><td><strong class="num">{p.headline.value}{p.headline.unit ? ` ${p.headline.unit}` : ''}</strong> {p.headline.label}</td></tr>
+        <tr><th scope="row">Source</th><td>{reports.map((r, i) => <>{i > 0 && <br />}<a class="link" href={r.href} target="_blank" rel="noopener">{r.label} <span class="sr-only">(PDF, opens in a new tab)</span>↗</a></>)}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</header>
+
+<style>
+  .case-hd { padding-top: clamp(1.5rem, 3vw, 2.5rem); }
+  .crumbs { display: flex; gap: 0.6rem; color: var(--mute); font-size: 0.75rem; }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--cobalt); text-decoration: underline; }
+  .case-hd__grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 5rem); align-items: end; margin-top: clamp(1.5rem, 3vw, 2.5rem); padding-bottom: clamp(2rem, 4vw, 3.5rem); border-bottom: 1px solid var(--ink); }
+  @media (max-width: 960px) { .case-hd__grid { grid-template-columns: minmax(0, 1fr); align-items: start; } }
+  .case-hd__disc { display: flex; gap: 0.9rem; color: var(--mute); }
+  .case-hd__idx { color: var(--cobalt); }
+  .case-hd__title { margin-top: 1rem; font-size: clamp(3rem, 1rem + 7.6vw, 8rem); font-weight: 700; font-stretch: 68%; line-height: 0.88; letter-spacing: -0.035em; }
+  .case-hd__stand { margin-top: clamp(1.25rem, 2.5vw, 2rem); max-width: 52ch; }
+
+  .tblock { width: 100%; border: 1px solid var(--ink); font-size: 0.9rem; background: var(--paper); }
+  .tblock th, .tblock td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  .tblock tr:last-child th, .tblock tr:last-child td { border-bottom: 0; }
+  .tblock th { width: 6.5rem; font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); border-right: 1px solid var(--rule); }
+  .tblock td { line-height: 1.45; }
+  .tblock td a { display: inline-block; padding-block: 0.3rem; }
+  .tblock strong { font-family: var(--font-display); font-stretch: 80%; font-weight: 700; font-size: 1.05rem; }
+  .tblock__dot { display: inline-block; width: 7px; height: 7px; margin-right: 0.5rem; border: 1.5px solid var(--cobalt); border-radius: 50%; vertical-align: 0.05em; }
+</style>

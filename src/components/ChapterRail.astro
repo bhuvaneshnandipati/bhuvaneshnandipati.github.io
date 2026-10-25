@@ -1,0 +1,70 @@
+---
+/** Sticky progress rail for the five case-study chapters. */
+const steps = [
+  { id: 'problem', label: 'Problem' },
+  { id: 'method', label: 'Method' },
+  { id: 'simulation', label: 'Simulation' },
+  { id: 'results', label: 'Results' },
+  { id: 'insight', label: 'Insight' },
+];
+---
+
+<nav class="rail no-print" aria-label="Case study chapters">
+  <ol class="wrap rail__list">
+    {steps.map((s, i) => (
+      <li><a href={`#${s.id}`} data-step={s.id}><span class="rail__n">{String(i + 1).padStart(2, '0')}</span><span class="rail__t">{s.label}</span></a></li>
+    ))}
+  </ol>
+  <div class="rail__bar" aria-hidden="true"><span></span></div>
+</nav>
+
+<script>
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('.rail a[data-step]'));
+  const bar = document.querySelector<HTMLElement>('.rail__bar span');
+  const sections = links.map((a) => document.getElementById(a.dataset.step!)).filter(Boolean) as HTMLElement[];
+  if (sections.length) {
+    let current = '';
+    const mark = () => {
+      const line = window.innerHeight * 0.4;
+      let id = '';
+      for (const s of sections) if (s.getBoundingClientRect().top <= line) id = s.id;
+      if (id === current) return;
+      current = id;
+      links.forEach((a) => {
+        const on = a.dataset.step === id;
+        a.classList.toggle('is-current', on);
+        if (on) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current');
+      });
+    };
+    const first = sections[0], last = sections[sections.length - 1];
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const start = first.offsetTop - window.innerHeight * 0.4;
+      const end = last.offsetTop + last.offsetHeight - window.innerHeight * 0.6;
+      const p = Math.min(1, Math.max(0, (window.scrollY - start) / (end - start)));
+      if (bar) bar.style.transform = `scaleX(${p})`;
+      mark();
+    };
+    window.addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  }
+</script>
+
+<style>
+  .rail { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); z-index: 40; background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--rule); }
+  .rail__list { list-style: none; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .rail__list a { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.8rem 0; font-family: var(--font-mono); font-size: 0.75rem; text-decoration: none; color: var(--mute); white-space: nowrap; transition: color 0.2s; }
+  .rail__list a:hover { color: var(--ink); }
+  .rail__list a.is-current { color: var(--ink); }
+  .rail__list a.is-current .rail__n { color: var(--cobalt); }
+  .rail__n { font-size: 0.66rem; }
+  .rail__bar { height: 2px; background: transparent; }
+  .rail__bar span { display: block; height: 100%; background: var(--cobalt); transform: scaleX(0); transform-origin: left; }
+  @media (max-width: 640px) {
+    .rail__list a { justify-content: center; padding: 0.7rem 0; }
+    .rail__t { display: none; }
+    .rail__list a.is-current .rail__t { display: inline; }
+    .rail__list a.is-current { grid-column: span 1; }
+  }
+</style>

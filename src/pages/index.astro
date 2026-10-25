@@ -1,0 +1,147 @@
+---
+import Base from '../layouts/Base.astro';
+import FlowHero from '../components/FlowHero.astro';
+import SectionHead from '../components/SectionHead.astro';
+import ProjectIndex from '../components/ProjectIndex.astro';
+import ContactForm from '../components/ContactForm.astro';
+import { projects } from '../data/projects';
+import { thesis, papers } from '../data/research';
+import { practice, tools } from '../data/site';
+---
+
+<Base sheet={{ n: 1, label: 'Index' }}>
+  <FlowHero />
+
+  <section class="wrap section" id="work" aria-labelledby="work-title">
+    <SectionHead index="01" kicker="Case studies" title="Three studies, each with its <em>error bars.</em>" id="work-title">
+      <p>Each case study runs problem, method, simulation, results and insight, with the original figures, the setup that produced them, and what the run does not prove yet.</p>
+    </SectionHead>
+    <ProjectIndex />
+  </section>
+
+  <section class="ledger" aria-labelledby="ledger-title">
+    <div class="wrap section">
+      <SectionHead index="—" kicker="Verification" title="How each number was <em>checked.</em>" id="ledger-title">
+        <p>A CFD result is only as useful as the evidence behind it. These are the checks each study passed before its headline figure was reported.</p>
+      </SectionHead>
+      <ol class="ledger__grid">
+        {projects.map((p) => (
+          <li class="ledger__item" data-reveal>
+            <p class="label mute">{p.index} · {p.title}</p>
+            <p class="ledger__value num">{p.evidence.value}</p>
+            <p class="ledger__label">{p.evidence.label}</p>
+            <p class="ledger__note">{p.evidence.note}</p>
+            <a class="link mono" href={`/work/${p.slug}/`}>See the checks<span class="sr-only"> for {p.title}</span> →</a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap section" id="research" aria-labelledby="research-title">
+    <SectionHead index="02" kicker="Research" title="Inside the <em>continuous caster.</em>" id="research-title">
+      <p>Master’s research at Purdue University Northwest on how flow, solidification and carbon transport interact while steel solidifies, plus four coauthored papers.</p>
+    </SectionHead>
+    <div class="rteaser">
+      <article class="thesis-card" data-reveal>
+        <p class="label">M.S. thesis · {thesis.institution} · {thesis.year}</p>
+        <h3 class="thesis-card__title">{thesis.title}</h3>
+        <p class="thesis-card__q">{thesis.question}</p>
+        <ul class="thesis-card__m mono">
+          {thesis.methods.map((m) => <li>{m.term}</li>)}
+        </ul>
+        <div class="thesis-card__links">
+          <a class="btn" href="/research/">Thesis &amp; caster map <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="link mono" href={thesis.url} target="_blank" rel="noopener noreferrer">doi:{thesis.doi} <span class="sr-only">(opens in a new tab)</span>↗</a>
+        </div>
+      </article>
+      <ol class="papers-mini">
+        {papers.map((p) => (
+          <li data-reveal>
+            <a href={`https://doi.org/${p.doi}`} target="_blank" rel="noopener noreferrer">
+              <span class="papers-mini__y num">{p.year}</span>
+              <span class="papers-mini__t">{p.title}</span>
+              <span class="papers-mini__v mono">{p.venue}</span>
+              <span class="sr-only">(opens DOI record in a new tab)</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="about" id="about" aria-labelledby="about-title">
+    <div class="wrap section about__grid">
+      <div>
+        <p class="label mute"><span style="color:var(--cobalt)">03</span>&ensp;About</p>
+        <h2 class="about__title" id="about-title">Mechanical engineer.<br />CFD researcher.</h2>
+      </div>
+      <div class="about__body" data-reveal>
+        <p class="about__lead">I’m Sai Bhuvanesh Nandipati, a mechanical engineer focused on fluid flow, heat transfer and solidification modeling.</p>
+        <div class="prose">
+          <p>At Purdue University Northwest, my master’s research examined carbon segregation, shell growth and mold flow in continuous casting. Alongside it I coauthored four papers on spray cooling, macrosegregation and CFD-based caster optimization.</p>
+          <p>The studies here document model assumptions, numerical uncertainty and the validation still needed. I state the claim before the run, check conservation and grid sensitivity, and report each result with its uncertainty.</p>
+        </div>
+        <div class="about__lists">
+          <div>
+            <p class="label mute">Practice</p>
+            <ul class="mono">{practice.map((x) => <li>{x}</li>)}</ul>
+          </div>
+          <div>
+            <p class="label mute">Tools in these studies</p>
+            <ul class="mono">{tools.map((x) => <li>{x}</li>)}</ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="contact" aria-labelledby="contact-title">
+    <SectionHead index="04" kicker="Contact" title="Have a project or a research question? <em>Let’s talk.</em>" id="contact-title" />
+    <ContactForm />
+  </section>
+</Base>
+
+<style>
+  .ledger { background: var(--paper-2); border-block: 1px solid var(--rule); }
+  .ledger__grid { list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+  .ledger__item { display: grid; gap: 0.6rem; align-content: start; padding: 1.75rem clamp(1rem, 2vw, 2rem) 0 0; }
+  .ledger__item + .ledger__item { border-left: 1px solid var(--rule); padding-left: clamp(1rem, 2vw, 2rem); }
+  .ledger__value { font-family: var(--font-display); font-weight: 700; font-stretch: 66%; font-size: clamp(3.2rem, 6vw, 5.6rem); line-height: 0.9; letter-spacing: -0.02em; margin-top: 0.5rem; }
+  .ledger__label { font-family: var(--font-display); font-weight: 650; font-stretch: 85%; font-size: var(--step-1); }
+  .ledger__note { color: var(--ink-2); max-width: 38ch; }
+  @media (max-width: 860px) {
+    .ledger__grid { grid-template-columns: minmax(0, 1fr); }
+    .ledger__item + .ledger__item { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); margin-top: 1.75rem; }
+  }
+
+  .rteaser { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  @media (max-width: 960px) { .rteaser { grid-template-columns: minmax(0, 1fr); } }
+  .thesis-card { position: relative; background: var(--tunnel); color: var(--tunnel-ink); padding: clamp(1.5rem, 3vw, 2.75rem); display: grid; gap: 1.1rem; }
+  .thesis-card .label { color: var(--tunnel-mute); }
+  .thesis-card__title { font-size: var(--step-3); font-weight: 650; font-stretch: 82%; line-height: 1.05; }
+  .thesis-card__q { color: var(--tunnel-ink); opacity: 0.85; max-width: 52ch; }
+  .thesis-card__m { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .thesis-card__m li { border: 1px solid var(--tunnel-line); padding: 0.3rem 0.6rem; font-size: 0.72rem; color: var(--tunnel-mute); }
+  .thesis-card__links { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: 0.5rem; }
+  .thesis-card .btn { border-color: var(--tunnel-ink); color: var(--tunnel-ink); }
+  .thesis-card .btn:hover { background: var(--tunnel-ink); color: var(--tunnel); }
+  .thesis-card .link { color: var(--cobalt-on-dark); overflow-wrap: anywhere; }
+
+  .papers-mini { list-style: none; border-top: 1px solid var(--ink); }
+  .papers-mini li { border-bottom: 1px solid var(--rule); }
+  .papers-mini a { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); gap: 0.3rem 1rem; padding: 1.1rem 0; text-decoration: none; }
+  .papers-mini__y { font-family: var(--font-display); font-weight: 700; font-stretch: 70%; font-size: 1.2rem; grid-row: span 2; }
+  .papers-mini__t { font-family: var(--font-display); font-weight: 600; font-stretch: 88%; font-size: 1.08rem; line-height: 1.25; }
+  .papers-mini__v { color: var(--mute); font-size: 0.72rem; }
+  .papers-mini a:hover .papers-mini__t { color: var(--cobalt); text-decoration: underline; text-underline-offset: 0.18em; }
+
+  .about { border-top: 1px solid var(--rule); }
+  .about__grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 5vw, 6rem); }
+  @media (max-width: 900px) { .about__grid { grid-template-columns: minmax(0, 1fr); } }
+  .about__title { margin-top: 1rem; font-size: var(--step-4); font-weight: 700; font-stretch: 74%; line-height: 0.94; letter-spacing: -0.03em; }
+  .about__body { display: grid; gap: 1.5rem; }
+  .about__lead { font-size: clamp(1.3rem, 1.1rem + 0.8vw, 1.75rem); line-height: 1.4; max-width: 30ch; }
+  .about__lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 1.5rem; margin-top: 0.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
+  .about__lists ul { list-style: none; display: grid; gap: 0.35rem; margin-top: 0.75rem; font-size: 0.8rem; }
+</style>

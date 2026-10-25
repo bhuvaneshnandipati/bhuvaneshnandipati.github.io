@@ -1,0 +1,39 @@
+---
+/** The 20 mm tyre–road gap closing into a contact patch (schematic, gap exaggerated). */
+interface Props { size?: number }
+const { size = 240 } = Astro.props;
+---
+
+<svg class="glyph tyre" viewBox="0 0 240 240" width={size} height={size} role="img" aria-label="Schematic: a tyre 20 millimetres above a moving road, then sealed to it with a contact patch">
+  <g class="tyre__flow" stroke="currentColor" stroke-opacity="0.45" fill="none" stroke-width="1.2">
+    <path d="M8 60 C70 60 70 40 120 40 S170 60 232 60" />
+    <path d="M8 96 C60 96 62 76 120 74 S178 96 232 96" />
+    <path class="tyre__under" d="M8 176 H232" />
+  </g>
+  <g class="tyre__wheel">
+    <circle cx="120" cy="118" r="54" fill="currentColor" />
+    <circle cx="120" cy="118" r="27" fill="var(--paper)" opacity="0.32" />
+    <rect class="tyre__patch" x="94" y="170" width="52" height="6" fill="var(--cobalt)" />
+  </g>
+  <line x1="8" y1="196" x2="232" y2="196" stroke="currentColor" stroke-width="2" />
+  <g class="tyre__dim" stroke="var(--warm)" stroke-width="1.2">
+    <line x1="182" y1="172" x2="182" y2="196" /><line x1="176" y1="172" x2="188" y2="172" /><line x1="176" y1="196" x2="188" y2="196" />
+  </g>
+  <text class="tyre__dimtxt" x="192" y="188" font-family="var(--font-mono)" font-size="10" fill="var(--warm)">20 mm</text>
+  <text x="8" y="220" font-family="var(--font-mono)" font-size="9.5" fill="currentColor" opacity="0.6">road moves →</text>
+</svg>
+
+<style>
+  .tyre__wheel, .tyre__under, .tyre__dim, .tyre__dimtxt, .tyre__patch { transition: transform 0.6s var(--ease-out), opacity 0.4s; }
+  .tyre__patch { opacity: 0; }
+  :global(a:hover) .tyre .tyre__wheel,
+  :global(a:focus-visible) .tyre .tyre__wheel { transform: translateY(20px); }
+  :global(a:hover) .tyre .tyre__patch,
+  :global(a:focus-visible) .tyre .tyre__patch { opacity: 1; }
+  :global(a:hover) .tyre .tyre__under,
+  :global(a:hover) .tyre .tyre__dim,
+  :global(a:hover) .tyre .tyre__dimtxt,
+  :global(a:focus-visible) .tyre .tyre__under,
+  :global(a:focus-visible) .tyre .tyre__dim,
+  :global(a:focus-visible) .tyre .tyre__dimtxt { opacity: 0; }
+</style>

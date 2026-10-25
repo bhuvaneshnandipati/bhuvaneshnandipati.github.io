@@ -1,0 +1,189 @@
+---
+import { site } from '../data/site';
+---
+
+<div class="contact">
+  <form class="cform" id="contact-form" action={site.contactEndpoint.replace('/ajax/', '/')} method="POST" data-endpoint={site.contactEndpoint}>
+    <input type="hidden" name="_subject" value="Portfolio inquiry" />
+    <input type="hidden" name="_captcha" value="false" />
+    <input type="hidden" name="_template" value="table" />
+    <div class="cform__trap" aria-hidden="true">
+      <label for="cf-website">Leave this field empty</label>
+      <input id="cf-website" name="_honey" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <div class="cform__row">
+      <div class="field">
+        <label for="cf-name">Name <span aria-hidden="true">*</span></label>
+        <input id="cf-name" name="name" autocomplete="name" required maxlength="100" />
+        <p class="field__err" id="cf-name-err" hidden>Enter your name.</p>
+      </div>
+      <div class="field">
+        <label for="cf-email">Email <span aria-hidden="true">*</span></label>
+        <input id="cf-email" name="email" type="email" autocomplete="email" required maxlength="254" />
+        <p class="field__err" id="cf-email-err" hidden>Enter an email address like name@example.com.</p>
+      </div>
+    </div>
+    <div class="cform__row">
+      <div class="field">
+        <label for="cf-org">Organization <span class="mute">(optional)</span></label>
+        <input id="cf-org" name="organization" autocomplete="organization" maxlength="120" />
+      </div>
+      <div class="field">
+        <label for="cf-topic">Topic <span aria-hidden="true">*</span></label>
+        <select id="cf-topic" name="topic" required>
+          <option value="" selected disabled>Choose a topic</option>
+          <option>Project collaboration</option>
+          <option>Research question</option>
+          <option>Something else</option>
+        </select>
+        <p class="field__err" id="cf-topic-err" hidden>Choose a topic.</p>
+      </div>
+    </div>
+    <div class="field">
+      <label for="cf-message">Message <span aria-hidden="true">*</span></label>
+      <textarea id="cf-message" name="message" rows="6" required minlength="10" maxlength="5000"></textarea>
+      <p class="field__err" id="cf-message-err" hidden>Write at least 10 characters.</p>
+    </div>
+
+    <div class="cform__foot">
+      <p class="mono mute cform__note">* Required. Messages are delivered to {site.email} through FormSubmit.</p>
+      <button class="btn btn--solid" type="submit"><span class="cform__label">Send message</span> <span class="arrow" aria-hidden="true">→</span></button>
+    </div>
+    <p class="cform__status" id="cf-status" role="status" aria-live="polite" tabindex="-1"></p>
+  </form>
+
+  <aside class="direct" aria-label="Direct contact">
+    <p class="label mute">Or write directly</p>
+    <p class="direct__email" id="direct-email">{site.email}</p>
+    <div class="direct__actions">
+      <a class="btn" href={`mailto:${site.email}?subject=Portfolio%20inquiry`}>Open email app</a>
+      <button class="btn" type="button" id="copy-email">Copy address</button>
+    </div>
+    <p class="mono mute direct__copied" id="copy-status" role="status" aria-live="polite"></p>
+    <a class="link direct__li" href={site.linkedin} target="_blank" rel="noopener noreferrer">{site.linkedinLabel} <span class="sr-only">(opens in a new tab)</span>↗</a>
+  </aside>
+</div>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('#contact-form');
+  const status = document.querySelector<HTMLElement>('#cf-status');
+
+  const validators: Record<string, (v: string) => boolean> = {
+    name: (v) => v.trim().length > 0,
+    email: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),
+    topic: (v) => v.length > 0,
+    message: (v) => v.trim().length >= 10,
+  };
+  const ids: Record<string, string> = { name: 'cf-name', email: 'cf-email', topic: 'cf-topic', message: 'cf-message' };
+
+  function validate(f: HTMLFormElement) {
+    let first: HTMLElement | null = null;
+    for (const [name, ok] of Object.entries(validators)) {
+      const el = f.elements.namedItem(name) as HTMLInputElement;
+      const err = document.getElementById(`${ids[name]}-err`)!;
+      const valid = ok(el.value);
+      err.hidden = valid;
+      el.setAttribute('aria-invalid', String(!valid));
+      if (!valid) el.setAttribute('aria-describedby', err.id); else el.removeAttribute('aria-describedby');
+      if (!valid && !first) first = el;
+    }
+    return first;
+  }
+
+  if (form && status) {
+    form.noValidate = true;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const firstInvalid = validate(form);
+      if (firstInvalid) { firstInvalid.focus(); return; }
+      const data = new FormData(form);
+      if (String(data.get('_honey') || '').trim()) return;
+      data.set('_subject', `Portfolio inquiry: ${data.get('topic') || 'General'}`);
+
+      const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      const label = btn.querySelector('.cform__label')!;
+      btn.disabled = true;
+      label.textContent = 'Sending…';
+      status.dataset.state = 'sending';
+      status.textContent = 'Sending your message…';
+      try {
+        const res = await fetch(form.dataset.endpoint!, { method: 'POST', body: data, headers: { Accept: 'application/json' } });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || (json.success !== true && json.success !== 'true')) throw new Error(json.message || `HTTP ${res.status}`);
+        status.dataset.state = 'sent';
+        status.textContent = 'Message sent. Thank you, I’ll reply by email.';
+        form.reset();
+      } catch (err) {
+        console.warn('[contact-form] delivery failed', err);
+        status.dataset.state = 'error';
+        status.textContent = 'The message could not be sent. Please email the address beside the form instead.';
+      } finally {
+        btn.disabled = false;
+        label.textContent = 'Send message';
+        status.focus();
+      }
+    });
+    form.addEventListener('input', (e) => {
+      const el = e.target as HTMLInputElement;
+      if (el.getAttribute('aria-invalid') === 'true' && validators[el.name]?.(el.value)) {
+        el.setAttribute('aria-invalid', 'false');
+        document.getElementById(`${ids[el.name]}-err`)!.hidden = true;
+        el.removeAttribute('aria-describedby');
+      }
+    });
+  }
+
+  const copyBtn = document.querySelector<HTMLButtonElement>('#copy-email');
+  const copyStatus = document.querySelector<HTMLElement>('#copy-status');
+  const addr = document.querySelector<HTMLElement>('#direct-email');
+  copyBtn?.addEventListener('click', async () => {
+    const text = addr?.textContent?.trim() || '';
+    try {
+      await navigator.clipboard.writeText(text);
+      if (copyStatus) copyStatus.textContent = 'Address copied.';
+    } catch {
+      if (addr) { const r = document.createRange(); r.selectNodeContents(addr); const s = getSelection(); s?.removeAllRanges(); s?.addRange(r); }
+      if (copyStatus) copyStatus.textContent = 'Address selected. Press Ctrl+C or ⌘C to copy.';
+    }
+  });
+</script>
+
+<style>
+  .contact { display: grid; gap: clamp(2rem, 4vw, 4rem); grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); align-items: start; }
+  @media (max-width: 900px) { .contact { grid-template-columns: minmax(0, 1fr); } }
+  .cform { display: grid; gap: 1.25rem; }
+  .cform__row { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .field { display: grid; gap: 0.4rem; min-width: 0; }
+  .field label { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 0.8rem;
+    background: var(--paper);
+    border: 0;
+    border-bottom: 1.5px solid var(--ink);
+    border-radius: 0;
+    font-family: var(--font-text);
+    font-size: 1.05rem;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .field select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 2.5rem; }
+  .field textarea { resize: vertical; min-height: 9rem; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; background: var(--paper-2); border-bottom-color: var(--cobalt); box-shadow: 0 2px 0 var(--cobalt); }
+  .field [aria-invalid='true'] { border-bottom-color: var(--warm); }
+  .field__err { font-family: var(--font-mono); font-size: 0.75rem; color: var(--warm); }
+  .cform__trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .cform__foot { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: center; }
+  .cform__note { max-width: 44ch; font-size: 0.72rem; }
+  .cform__status { min-height: 1.5em; font-family: var(--font-mono); font-size: 0.85rem; }
+  .cform__status[data-state='sent'] { color: var(--pass); }
+  .cform__status[data-state='error'] { color: var(--warm); }
+  .cform__status:focus { outline: none; }
+
+  .direct { display: grid; gap: 1rem; padding: clamp(1.25rem, 2.5vw, 2rem); border: 1px solid var(--ink); background: var(--paper); }
+  .direct__email { font-family: var(--font-display); font-weight: 650; font-stretch: 82%; font-size: clamp(1.3rem, 2vw, 1.7rem); overflow-wrap: anywhere; user-select: all; }
+  .direct__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+  .direct__copied { min-height: 1.4em; font-size: 0.75rem; }
+  .direct__li { overflow-wrap: anywhere; font-size: 0.95rem; }
+</style>

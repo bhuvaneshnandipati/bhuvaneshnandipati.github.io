@@ -1,0 +1,33 @@
+---
+interface Props { id: 'problem' | 'method' | 'simulation' | 'results' | 'insight'; n: number; title: string; intro?: string; tone?: 'paper' | 'band' }
+const { id, n, title, intro, tone = 'paper' } = Astro.props;
+const names = { problem: 'Problem', method: 'Method', simulation: 'Simulation', results: 'Results', insight: 'Insight' };
+---
+
+<section class:list={['chap', `chap--${tone}`]} id={id} aria-labelledby={`${id}-title`}>
+  <div class="wrap chap__inner">
+    <header class="chap__head" data-reveal>
+      <p class="chap__k label"><span class="chap__n">{String(n).padStart(2, '0')}</span>{names[id]}</p>
+      <h2 class="chap__title" id={`${id}-title`} set:html={title} />
+      {intro && <p class="chap__intro" set:html={intro} />}
+    </header>
+    <div class="chap__body">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .chap { padding-block: clamp(3.5rem, 7vw, 7rem); }
+  .chap + .chap { border-top: 1px solid var(--rule); }
+  .chap--band { background: var(--paper-2); }
+  .chap__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 1rem clamp(2rem, 5vw, 6rem); align-items: end; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
+  @media (max-width: 900px) { .chap__head { grid-template-columns: minmax(0, 1fr); } }
+  .chap__k { grid-column: 1 / -1; display: flex; gap: 0.9rem; color: var(--mute); }
+  .chap__n { color: var(--cobalt); }
+  .chap__title { font-size: var(--step-4); font-weight: 700; font-stretch: 74%; line-height: 0.95; letter-spacing: -0.03em; max-width: 18ch; }
+  .chap__title :global(em) { font-family: var(--font-text); font-style: italic; font-weight: 400; font-stretch: 100%; letter-spacing: -0.02em; color: var(--cobalt); }
+  .chap__intro { color: var(--ink-2); max-width: 52ch; font-size: 1.08rem; padding-bottom: 0.3rem; }
+  .chap__body { display: grid; gap: clamp(2.5rem, 5vw, 4.5rem); }
+  .chap__body > :global(*) { min-width: 0; }
+</style>

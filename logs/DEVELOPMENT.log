@@ -1,0 +1,76 @@
+SBN PORTFOLIO, DEVELOPMENT LOG
+==============================
+Session date: 2026-10-25 (UTC). Times are approximate.
+
+[02:20] SOURCE
+  - Previous site (sai-bhuvanesh-nandipati.chirpylynx64.chatgpt.site) downloaded earlier this session:
+    index.html, app.js (project/thesis detail text), style.css, 8 figures, 4 PDFs.
+  - PDFs: coldplate-study.pdf (5 slides), f1-contact-study.pdf (11 slides) and f1-study.pdf (10 slides)
+    are image-only; rendered with pdftoppm and read visually. orion-report.pdf has a text layer.
+  - Paper metadata (titles, venues, dates, full author lists) from api.crossref.org; thesis from api.datacite.org.
+  - No figures, numbers or claims were invented. Added computations are labelled on the page:
+      * hero: analytic potential flow past a sphere (lib/flow.ts)
+      * Orion: Rayleigh pitot Cp,max vs. simulated nose Cp (lib/gas.ts). Results: M2 −0.02%, M6 +1.76%.
+  - Figures cropped from the PDFs at 300 dpi: F1 top-down air speed (gap vs. patch/rotating),
+    F1 side views (3 configs), surface Cp, underside ΔCp, gap mesh A/B, y+ maps A/B, cold-plate geometries.
+
+[02:30] STACK
+  - Astro 7.3.8 (newest release at least two weeks old), static output; Three.js 0.186.1; sharp 0.35.5;
+    @astrojs/sitemap 3.7.4; self-hosted variable fonts via @fontsource-variable 5.3.0.
+  - No UI framework: interactive parts are TypeScript custom elements, to keep JavaScript minimal.
+  - Problem: Astro 7 is newer than the reference material available offline. Resolved with a smoke build
+    (images, scripts, sitemap) before committing to the stack.
+
+[02:41-02:52] BUILD
+  - Data layer in src/data/*, maths in src/lib/*, components, five routes plus 404 and robots.txt.
+  - Problem: a shell 'rm' with a relative glob was blocked by a safety check. Resolved by removing the
+    two specific files by absolute path.
+  - Problem: a sed run touched a PNG through a binary grep match. Verified byte-identical with cmp.
+  - Problem: chart titles showed literal "C_d"/"C_p". Replaced with plain "Cd"/"Cp" in SVG text.
+
+[02:53] TEST RUN 1: 29 failures
+  - 'Content still hidden by reveal': test artifact. The page's CSS smooth scrolling cancelled the test's
+    rapid scrollTo calls. The test now scrolls with behavior: 'instant'.
+  - axe scrollable-region-focusable: the horizontally scrolling chart and table containers were not
+    focusable. Added tabindex="0", role="region" and aria-label.
+  - axe color-contrast: values above dimmed (opacity 0.3) chart bars. Dimming now applies to the bar fill
+    (::before) only; labels keep full contrast.
+  - The 404 page's own "404" console message was counted as an error. Excluded for that route.
+
+[02:55] TEST RUN 2: all checks passed (4 viewports × 6 routes, links, interactions, reduced motion).
+
+[02:57] VISUAL REVIEW (screenshots)
+  - Hero streaks looked uniformly grey (most of a potential-flow field sits near Cp ≈ 0). The colour scale
+    is clipped to ±0.75 and stated on the legend; brightness is weighted by |Cp|. The upstream stagnation
+    point now faces the oncoming flow.
+  - The labels baked into the F1 top-down images collided with the slider tags. Re-cropped below them.
+  - Pitot chart: the Mach 6 label overlapped the "hypersonic limit" note. The note moved left.
+  - Caster map: "Shell closes" / "casting direction" and "Centerline" / "Schematic" overlapped. Repositioned.
+  - Chapter rail marked "Insight" at the top of the page. The current chapter is now computed from position.
+  - Mobile hero: the "Test section" tag collided with the probe readout. The tag is hidden below 760 px.
+
+[03:00] LIGHTHOUSE RUN 1 (mobile): home perf 54 (TBT 4.7 s), F1 perf 79, A11y 97 on F1.
+  - Render-blocking CSS: build.inlineStylesheets = 'always'.
+  - Source Serif 4 switched from the opsz axis (122/130 KB) to the wght axis (51/52 KB).
+  - The four hero fonts are preloaded (Archivo wdth, Source Serif roman and italic, JetBrains Mono).
+  - The WebGL hero boots on the first interaction; until then a build-time SVG of the same flow is shown.
+  - Trail colours are cached per sample instead of re-evaluating velocity for every vertex every frame.
+  - label-content-name-mismatch on the logo link: aria-label removed; visible text plus sr-only ", home".
+  - target-size on stacked PDF links in the title block: links get vertical padding.
+  - Home desktop CLS 0.349, caused by late serif-italic and mono fonts in the hero. Fixed by preloading them.
+
+[03:12] LIGHTHOUSE FINAL (logs/lighthouse-summary.txt)
+  - Mobile performance 94–98, desktop 100 on every page; Accessibility, Best Practices and SEO 100 everywhere.
+  - TBT 0 ms and CLS 0 on all pages.
+
+[03:15] FINAL CHECKS
+  - npm test: all checks passed (logs/test.log, logs/test-report.json).
+  - astro check: 0 errors, 0 warnings, 0 hints.
+
+OPEN ITEMS / NOTES
+  - FormSubmit requires a one-time activation click from nandipatibhuvan@gmail.com after the first
+    submission from the new domain. This could not be tested from the build environment.
+  - SITE_URL should be set to the final domain on the host; until then the host's own URL is used.
+  - The Three.js chunk is about 133 KB gzipped. It loads only after the first interaction.
+  - "Mechanical design and engineering automation" appears only in the practice list. No project in the
+    sources documents it, so no case study was written for it.

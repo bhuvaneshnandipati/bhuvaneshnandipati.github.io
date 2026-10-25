@@ -1,0 +1,80 @@
+---
+/**
+ * Before/after comparison of two simulation images of identical framing.
+ * Keyboard-operable through a native range input; works as two stacked images without JS.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  id: string;
+  before: { src: ImageMetadata; alt: string; label: string };
+  after: { src: ImageMetadata; alt: string; label: string };
+  caption?: string;
+  source?: string;
+  legend?: string;
+}
+const { id, before, after, caption, source, legend } = Astro.props;
+const ratio = `${before.src.width} / ${before.src.height}`;
+---
+
+<figure class="cmp">
+  <compare-slider class="cmp__stage" style={`--pos:50%; aspect-ratio:${ratio}`}>
+    <Image class="cmp__img cmp__img--after" src={after.src} alt={after.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1200px) 1100px, 100vw" loading="lazy" decoding="async" />
+    <div class="cmp__clip">
+      <Image class="cmp__img" src={before.src} alt={before.alt} widths={[600, 1000, 1400]} sizes="(min-width: 1200px) 1100px, 100vw" loading="lazy" decoding="async" />
+    </div>
+    <div class="cmp__handle" aria-hidden="true"><span></span></div>
+    <span class="cmp__lab cmp__lab--l tag">{before.label}</span>
+    <span class="cmp__lab cmp__lab--r tag">{after.label}</span>
+    <label class="sr-only" for={`${id}-range`}>Slide to compare: left shows {before.label}, right shows {after.label}</label>
+    <input class="cmp__range" id={`${id}-range`} type="range" min="0" max="100" value="50" step="1" />
+  </compare-slider>
+  {(caption || source || legend) && (
+    <figcaption class="cmp__cap">
+      {legend && <span class="cmp__legend mono" set:html={legend} />}
+      {caption && <span set:html={caption} />}
+      {source && <span class="mono mute cmp__src">{source}</span>}
+    </figcaption>
+  )}
+</figure>
+
+<script>
+  class CompareSlider extends HTMLElement {
+    connectedCallback() {
+      const range = this.querySelector<HTMLInputElement>('input[type=range]');
+      if (!range) return;
+      this.classList.add('is-ready');
+      const set = () => this.style.setProperty('--pos', `${range.value}%`);
+      range.addEventListener('input', set);
+      set();
+    }
+  }
+  customElements.define('compare-slider', CompareSlider);
+</script>
+
+<style>
+  .cmp { min-width: 0; }
+  .cmp__stage { position: relative; display: block; width: 100%; max-width: 100%; overflow: hidden; border: 1px solid var(--ink); background: #fff; user-select: none; }
+  .cmp__img, .cmp__stage :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cmp__clip { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--pos)) 0 0); }
+  .cmp__handle { position: absolute; top: 0; bottom: 0; left: var(--pos); width: 0; pointer-events: none; }
+  .cmp__handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: var(--cobalt); }
+  .cmp__handle span { position: absolute; top: 50%; left: 0; width: 34px; height: 34px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--cobalt); box-shadow: 0 0 0 3px #fff; }
+  .cmp__handle span::before { content: '‹ ›'; position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.1em; }
+  .cmp__range { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; touch-action: pan-y; }
+  .cmp__range:focus-visible ~ .cmp__handle span, .cmp__stage:focus-within .cmp__handle span { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--cobalt); }
+  .cmp__lab { position: absolute; top: 10px; background: rgb(255 255 255 / 0.9); color: var(--ink); pointer-events: none; }
+  .cmp__lab--l { left: 10px; }
+  .cmp__lab--r { right: 10px; }
+  .cmp__cap { display: grid; gap: 0.3rem; margin-top: 0.7rem; font-size: 0.92rem; line-height: 1.5; color: var(--ink-2); max-width: 75ch; }
+  .cmp__legend { font-size: 0.72rem; color: var(--mute); }
+  .cmp__src { font-size: 0.7rem; }
+
+  /* Without JS: show both images stacked. */
+  .cmp__stage:not(.is-ready) { aspect-ratio: auto !important; }
+  .cmp__stage:not(.is-ready) .cmp__img, .cmp__stage:not(.is-ready) :global(img) { position: static; height: auto; }
+  .cmp__stage:not(.is-ready) .cmp__clip { position: static; clip-path: none; }
+  .cmp__stage:not(.is-ready) .cmp__handle, .cmp__stage:not(.is-ready) .cmp__range { display: none; }
+  @media (max-width: 560px) { .cmp__lab { font-size: 0.6rem; top: 6px; } .cmp__lab--l { left: 6px; } .cmp__lab--r { right: 6px; } }
+</style>

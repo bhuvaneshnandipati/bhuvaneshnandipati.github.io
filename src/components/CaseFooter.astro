@@ -1,0 +1,51 @@
+---
+import { projects, type Project } from '../data/projects';
+interface Props { current: Project; limits: readonly string[]; next?: string }
+const { current, limits, next } = Astro.props;
+const i = projects.findIndex((p) => p.slug === current.slug);
+const nextProject = projects[(i + 1) % projects.length];
+---
+
+<section class="limits" aria-labelledby="limits-title">
+  <div class="wrap limits__grid">
+    <div>
+      <p class="label mute">Limits</p>
+      <h2 class="limits__title" id="limits-title">What this run doesn’t prove yet</h2>
+    </div>
+    <div>
+      <ul class="limits__list">
+        {limits.map((l) => <li>{l}</li>)}
+      </ul>
+      {next && <p class="limits__next"><span class="label">Next</span> {next}</p>}
+    </div>
+  </div>
+</section>
+
+<nav class="nextp" aria-label="Next case study">
+  <a class="wrap nextp__a" href={`/work/${nextProject.slug}/`}>
+    <span class="label mute">Next case study · {nextProject.index}</span>
+    <span class="nextp__t">{nextProject.title} <span class="nextp__arrow" aria-hidden="true">→</span></span>
+    <span class="nextp__s">{nextProject.discipline}</span>
+  </a>
+</nav>
+
+<style>
+  .limits { background: var(--tunnel); color: var(--tunnel-ink); padding-block: clamp(3.5rem, 7vw, 6rem); }
+  .limits .label { color: var(--tunnel-mute); }
+  .limits__grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: clamp(2rem, 5vw, 6rem); }
+  @media (max-width: 860px) { .limits__grid { grid-template-columns: minmax(0, 1fr); } }
+  .limits__title { margin-top: 0.8rem; font-size: var(--step-4); font-weight: 700; font-stretch: 74%; line-height: 0.95; letter-spacing: -0.03em; max-width: 14ch; }
+  .limits__list { list-style: none; counter-reset: lim; border-top: 1px solid var(--tunnel-line); }
+  .limits__list li { counter-increment: lim; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); padding: 1rem 0; border-bottom: 1px solid var(--tunnel-line); font-size: 1.05rem; }
+  .limits__list li::before { content: counter(lim, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.75rem; color: var(--cobalt-on-dark); padding-top: 0.25rem; }
+  .limits__next { margin-top: 1.5rem; display: flex; gap: 1rem; align-items: baseline; flex-wrap: wrap; }
+  .limits__next .label { color: var(--cobalt-on-dark); }
+
+  .nextp { border-bottom: 1px solid var(--rule); }
+  .nextp__a { display: grid; gap: 0.6rem; padding-block: clamp(3rem, 6vw, 5rem); text-decoration: none; }
+  .nextp__t { font-family: var(--font-display); font-size: var(--step-4); font-weight: 700; font-stretch: 70%; line-height: 0.95; letter-spacing: -0.03em; }
+  .nextp__arrow { display: inline-block; color: var(--cobalt); transition: transform 0.3s var(--ease-out); }
+  .nextp__a:hover .nextp__arrow { transform: translateX(10px); }
+  .nextp__a:hover .nextp__t { color: var(--cobalt); }
+  .nextp__s { color: var(--mute); }
+</style>

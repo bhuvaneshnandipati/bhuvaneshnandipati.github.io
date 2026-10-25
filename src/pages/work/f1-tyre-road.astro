@@ -1,0 +1,280 @@
+---
+import Base from '../../layouts/Base.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import ChapterRail from '../../components/ChapterRail.astro';
+import Chapter from '../../components/Chapter.astro';
+import SpecSheet from '../../components/SpecSheet.astro';
+import StateSwitch from '../../components/StateSwitch.astro';
+import Figure from '../../components/Figure.astro';
+import CompareSlider from '../../components/CompareSlider.astro';
+import BarRows from '../../components/charts/BarRows.astro';
+import Columns from '../../components/charts/Columns.astro';
+import LinePlot from '../../components/charts/LinePlot.astro';
+import CaseFooter from '../../components/CaseFooter.astro';
+import { Image } from 'astro:assets';
+import { projectBySlug } from '../../data/projects';
+import { meshStudy, contactSetup, configs, regionDelta, wheelForces, speeds, openRoad, grid, checks } from '../../data/f1';
+import { coolwarm, blues, legendGradient } from '../../lib/colormap';
+import surfaceCp from '../../assets/img/f1-surface-cp.png';
+import underside from '../../assets/img/f1-underside-dcp.png';
+import gapA from '../../assets/img/f1-gapmesh-a.png';
+import gapB from '../../assets/img/f1-gapmesh-b.png';
+import yA from '../../assets/img/f1-yplus-a.png';
+import yB from '../../assets/img/f1-yplus-b.png';
+import sideGap from '../../assets/img/f1-side-gap.png';
+import sidePatch from '../../assets/img/f1-side-patch-static.png';
+import sideRot from '../../assets/img/f1-side-patch-rot.png';
+import topGap from '../../assets/img/f1-topdown-gap.png';
+import topRot from '../../assets/img/f1-topdown-patch-rot.png';
+
+const p = projectBySlug('f1-tyre-road');
+const C = { gap: '#c4552d', patch: '#2b5fd9', rot: '#1f8a5b', ink: '#101315', mute: '#8b9196' };
+const sideImgs: Record<string, any> = { gap: sideGap, patch: sidePatch, rot: sideRot };
+const cwLegend = legendGradient((t) => coolwarm(t));
+const bluesLegend = legendGradient((t) => blues(t));
+const limits = [
+  'Independent simulation on a generic 2026 F1 geometry, not a wind-tunnel validation.',
+  'Downforce is not grid-independent: it zigzags between grids, so the fine-grid Cl of −0.335 carries a half-range estimate of ±0.12 (about ±35%).',
+  'Grid uncertainty does not include turbulence-model or geometry uncertainty.',
+  'At 80 m/s, 32% of the car’s surface sits above y+ 300 (5% at 20 m/s). The wall function covers it, but the 80 m/s downforce is the least certain number here.',
+  'Steady RANS throughout. A static wheel on a moving road is a modelling step, not a physical case.',
+];
+const ld = [{
+  '@context': 'https://schema.org', '@type': 'CreativeWork', name: p.title, description: p.description,
+  author: { '@type': 'Person', name: 'Sai Bhuvanesh Nandipati' }, dateModified: '2026-10', keywords: 'F1 aerodynamics, OpenFOAM, contact patch, rotating wheels, grid convergence, GCI',
+}];
+---
+
+<Base title={p.title} description={p.description} sheet={{ n: 3, label: p.title }} ogType="article" jsonLd={ld}>
+  <CaseHeader project={p} reports={[
+    { href: '/reports/f1-study.pdf', label: 'Near-wall mesh study (PDF)' },
+    { href: '/reports/f1-contact-study.pdf', label: 'Contact-patch study (PDF)' },
+  ]} />
+  <ChapterRail />
+
+  <Chapter id="problem" n={1} title="One prism layer moved downforce <em>by 41%.</em>" intro="Same car, same settings, two near-wall meshes at 20 m/s. Drag moved 0.6%. Downforce moved 41%, and 95% of that difference sat on the rear tyres.">
+    <div class="pair" data-reveal>
+      <div class="pair__card">
+        <p class="label mute">Mesh A · no prism layer</p>
+        <p class="pair__v num">C<sub>l</sub> −0.740</p>
+        <p class="mono mute">C<sub>d</sub> 0.634</p>
+      </div>
+      <div class="pair__delta mono"><span>ΔC<sub>l</sub> 41%</span><span>ΔC<sub>d</sub> 0.6%</span></div>
+      <div class="pair__card">
+        <p class="label mute">Mesh B · 1 prism layer</p>
+        <p class="pair__v num">C<sub>l</sub> −0.524</p>
+        <p class="mono mute">C<sub>d</sub> 0.638</p>
+      </div>
+    </div>
+    <div class="split">
+      <div class="stack">
+        <Figure src={surfaceCp} frame="dark" alt="Surface pressure coefficient on the generic 2026 F1 model from the layered mesh, blue for suction and red for positive pressure" caption="Surface pressure coefficient on the layered mesh." source="Near-wall mesh study, slide 1" />
+        <div class="legend-row"><span class="mono">C<sub>p</sub></span><span class="legend-bar" style={`background:${cwLegend}`}></span><span class="mono legend-ticks"><span>−1.0</span><span>0</span><span>+1.0</span></span></div>
+      </div>
+      <BarRows
+        title="Where the 41% came from"
+        rows={meshStudy.dClShare.map((r) => ({ label: r.label, values: [r.v] }))}
+        series={[{ label: 'Share of total ΔCl', color: C.patch }]}
+        min={-10} max={80} step={10} unit="%" signed
+        axisLabel="share of total change in Cl, mesh A − mesh B (%)"
+        caption="Pressure difference integrated over each region. The bottom 20 mm of the rear tyres alone carries two thirds of the change. Wings, floor and body barely move."
+      />
+    </div>
+    <div class="split split--even">
+      <Figure src={underside} alt="Underside view of the car coloured by the pressure-coefficient difference between the two meshes, concentrated on the rear tyres" caption="ΔC<sub>p</sub> = C<sub>p</sub>(A) − C<sub>p</sub>(B), seen from below with the nose on the left. Blue is more suction on the no-layer mesh; the signal sits where the rear tyres meet the road." source="Near-wall mesh study, slide 6" />
+      <StateSwitch label="Near-wall mesh" options={[{ id: 'A', label: 'A · no layer' }, { id: 'B', label: 'B · 1 prism layer' }]}>
+        <div class="meshview">
+          <div data-when="A"><Image src={gapA} alt="Mesh A: tetrahedral cells in the 20 mm gap under the rear tyre, without a prism layer" widths={[600, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /></div>
+          <div data-when="B"><Image src={gapB} alt="Mesh B: the same gap with one prism layer along the tyre surface" widths={[600, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /></div>
+          <p class="meshview__cap">The 20 mm slot under the right-rear tyre, 26 cm wide. The tyre sits above the moving road so the mesh stays valid.</p>
+          <div data-when="A"><Image src={yA} alt="Mesh A y-plus map: large red areas above y+ 300, especially on the tyres" widths={[500, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /><p class="mono meshview__y">{meshStudy.yplus.A}</p></div>
+          <div data-when="B"><Image src={yB} alt="Mesh B y-plus map: almost no surface above y+ 300" widths={[500, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /><p class="mono meshview__y">{meshStudy.yplus.B}</p></div>
+          <p class="meshview__cap">Red marks y+ above 300, outside the log-law range wall functions assume. The layer fixes this almost everywhere, yet the wing and floor forces barely change.</p>
+        </div>
+      </StateSwitch>
+    </div>
+  </Chapter>
+
+  <Chapter id="method" n={2} tone="band" title="Three ways to put a tyre <em>on the road.</em>" intro="Same car, mesh and settings for all three. Only the tyre–road contact and the wheel motion change. Pick a model to see its flow and forces.">
+    <StateSwitch label="Tyre model" options={configs.map((c) => ({ id: c.id, label: c.short }))} initial="gap">
+      <div class="tyres">
+        <div class="tyres__view">
+          {configs.map((c) => (
+            <div data-when={c.id}>
+              <Image src={sideImgs[c.id]} alt={`Streamwise air speed through the front-left tyre centre, ${c.label} model, 20 m/s; orange line marks backflow`} widths={[600, 850]} sizes="(min-width: 960px) 640px, 100vw" loading="lazy" />
+              <p class="tyres__note">{c.note}</p>
+            </div>
+          ))}
+          <div class="legend-row"><span class="mono">U<sub>x</sub>/U<sub>∞</sub></span><span class="legend-bar" style={`background:${bluesLegend}`}></span><span class="mono legend-ticks"><span>0.0</span><span>0.5</span><span>1.0+</span></span></div>
+          <p class="mono mute tyres__src">Front-left tyre, side view, 20 m/s. Orange line = air flowing backwards. Contact-patch study, slide 5.</p>
+        </div>
+        <div class="tyres__charts">
+          <Columns title="Drag" unit="N" min={200} max={240} step={10} axisNote="Axis starts at 200 N"
+            groups={configs.map((c) => ({ label: c.short, values: [c.drag], activeFor: c.id }))}
+            series={[{ label: 'Drag', color: C.ink }]} height={200} />
+          <Columns title="Downforce" unit="N" min={0} max={120} step={20}
+            groups={configs.map((c) => ({ label: c.short, values: [c.downforce], activeFor: c.id }))}
+            series={[{ label: 'Downforce', color: C.patch }]} height={200} />
+          <p class="mono mute">20 m/s, medium grid, mean of iterations 2000–3000.</p>
+        </div>
+      </div>
+    </StateSwitch>
+  </Chapter>
+
+  <Chapter id="simulation" n={3} title="Setup, and the checks <em>that could have explained it away.</em>" intro="Both studies run steady RANS in OpenFOAM v2512 on the same generic 2026 car.">
+    <div class="split split--even">
+      <SpecSheet title="Near-wall mesh study" rows={meshStudy.setup} />
+      <SpecSheet title="Contact-patch study (14 runs)" rows={contactSetup} />
+    </div>
+    <ol class="qa">
+      {checks.map((c, i) => (
+        <li class="qa__item" data-reveal>
+          <span class="qa__n mono">{String(i + 1).padStart(2, '0')}</span>
+          <div><h3 class="qa__q">{c.q}</h3><p class="qa__a">{c.a}</p></div>
+        </li>
+      ))}
+    </ol>
+  </Chapter>
+
+  <Chapter id="results" n={4} tone="band" title="Sealed and spinning: <em>+2.6% drag, −13% downforce.</em>" intro="Drag the divider. Left: tyres 20 mm above the road, wheels static. Right: tyres sealed to the road, wheels rotating. Air speed 30 mm above the road, left half of the car seen from above, 20 m/s.">
+    <CompareSlider
+      id="topdown"
+      before={{ src: topGap, alt: 'Air speed 30 mm above the road with tyres 20 mm above it and static wheels: narrow wakes behind the tyres', label: 'Gap · static' }}
+      after={{ src: topRot, alt: 'Air speed 30 mm above the road with sealed, rotating tyres: wider wakes behind the tyres', label: 'Patch · rotating' }}
+      legend="Dark = slow air. Orange outline = backflow."
+      caption="The air that used to run under the tyres now goes around them, and the wheel wakes grow."
+      source="Contact-patch study, slide 1"
+    />
+    <div class="split split--even">
+      <BarRows
+        title="Where the downforce went"
+        rows={regionDelta.map((r) => ({ label: r.label, values: [r.patch, r.rot] }))}
+        series={[{ label: 'Patch, static', color: C.patch }, { label: 'Patch, rotating', color: C.rot }]}
+        min={-20} max={30} step={10} unit="N" signed
+        axisLabel="change in pressure lift vs. the gap model (N); positive = less downforce"
+        caption="Once the tyres are sealed to the road, air can no longer run underneath and suck them down: front tyres +23 → +43 N, rear +30 → +50 N (static). The floor and body gain a little. Front-wheel drag rises 40 → 53 N, the largest drag change on the car."
+      />
+      <BarRows
+        title="What spinning the wheels does"
+        rows={wheelForces.map((r) => ({ label: r.label, values: [r.static, r.rot] }))}
+        series={[{ label: 'Static', color: C.patch }, { label: 'Rotating', color: C.rot }]}
+        min={0} max={70} step={10} unit="N" digits={1}
+        axisLabel="wheel force, contact-patch model, 20 m/s (N)"
+        caption="Spinning lowers both lift and drag on the wheels, as in classic isolated-wheel tunnel tests (Fackrell &amp; Harvey, 1975). The rear tyres change most: drag −13%, lift −20%. With the wheels unloaded, the car gains 25% downforce over the static patch model."
+      />
+    </div>
+    <div class="split split--even">
+      <div class="stack">
+        <p class="sub-h">Speed: does the flow change character?</p>
+        <div class="duo">
+          <Columns title="Cd" min={0.6} max={0.74} step={0.02} digits={3} axisNote="Axis starts at 0.60"
+            groups={speeds.map((s) => ({ label: `${s.u} m/s`, values: [s.cd] }))} series={[{ label: 'Cd', color: C.ink }]} height={180} />
+          <Columns title="−Cl" min={0} max={0.3} step={0.05} digits={3}
+            groups={speeds.map((s) => ({ label: `${s.u} m/s`, values: [s.mcl] }))} series={[{ label: '−Cl', color: C.rot }]} height={180} />
+        </div>
+        <p class="note">20 → 80 m/s: C<sub>d</sub> −1.0%, downforce coefficient −5.5%. Realistic model (patch, rotating).</p>
+      </div>
+      <div class="stack">
+        <p class="sub-h">Tunnel walls vs. open road</p>
+        <div class="duo">
+          <Columns title="Cd" min={0.6} max={0.72} step={0.02} digits={3} axisNote="Axis starts at 0.60"
+            groups={openRoad.map((s) => ({ label: `${s.u} m/s`, values: [s.cdStd, s.cdOpen] }))}
+            series={[{ label: 'Standard domain', color: C.mute }, { label: 'Open road', color: C.rot }]} height={180} />
+          <Columns title="−Cl" min={0} max={0.3} step={0.05} digits={3}
+            groups={openRoad.map((s) => ({ label: `${s.u} m/s`, values: [s.mclStd, s.mclOpen] }))}
+            series={[{ label: 'Standard domain', color: C.mute }, { label: 'Open road', color: C.rot }]} height={180} />
+        </div>
+        <p class="note">Blockage falls from 2.8% to 0.9%. The tunnel walls add 3.2% to drag (3.8% at 50 m/s); downforce moves 1–2%, inside the run-to-run scatter. Every comparison above uses the same domain, so the changes between models hold either way.</p>
+      </div>
+    </div>
+  </Chapter>
+
+  <Chapter id="insight" n={5} title="Trust the drag. <em>Treat downforce as a trend.</em>" intro="The realistic model at 20 m/s on three grids: 0.80, 1.43 and 2.67 million cells.">
+    <div class="split split--even">
+      <LinePlot
+        title="Drag across three grids"
+        x={{ min: 0.5, max: 3, step: 0.5, label: 'cells (millions)', digits: 1 }}
+        y={{ min: 200, max: 240, step: 10, label: 'drag (N)' }}
+        series={[{ label: 'Drag', color: C.ink, points: grid.map((g) => [g.cells, g.drag]), labels: true }]}
+        desc="Drag is 226 newtons on all three grids."
+        caption="Grid-independent: C<sub>d</sub> 0.694 ± 0.8% by the grid convergence index (Celik et al., 2008)."
+      />
+      <LinePlot
+        title="Downforce across three grids"
+        x={{ min: 0.5, max: 3, step: 0.5, label: 'cells (millions)', digits: 1 }}
+        y={{ min: 0, max: 175, step: 25, label: 'downforce (N)' }}
+        series={[
+          { label: 'Total', color: C.rot, points: grid.map((g) => [g.cells, g.downforce]), labels: true },
+          { label: 'Front wing', color: C.patch, points: grid.map((g) => [g.cells, -g.frontWing]), dash: '5 4' },
+          { label: 'Rear wing', color: C.gap, points: grid.map((g) => [g.cells, -g.rearWing]), dash: '2 3' },
+        ]}
+        desc="Total downforce is 165, 89 and 109 newtons on the coarse, medium and fine grids. Front-wing downforce settles at 141, 118 and 108 newtons; rear-wing downforce oscillates at 85, 57 and 72 newtons."
+        caption="Not converged: it zigzags, so the standard GCI does not apply. Half the spread gives C<sub>l</sub> −0.34 ± 0.12 (±35%). The front wing settles steadily; the rear wing oscillates. The finer grid also resolves 4% more of the car’s surface."
+      />
+    </div>
+    <div class="lesson">
+      <p class="label mute">The lesson across the series</p>
+      <blockquote class="pull">
+        <p>The hardest part of race-car CFD is where the car touches the road. Model it, then prove your mesh, before trusting a downforce number.</p>
+      </blockquote>
+      <ol class="series mono">
+        <li><span>Mesh study</span> A 41% downforce difference lived in a 20 mm gap under the rear tyres.</li>
+        <li><span>Wake drag</span> Drag is about 95% profile loss: check the wake, not just the forces.</li>
+        <li><span>Contact patch</span> Sealing the gap and spinning the wheels: drag +2.6%, downforce −13%. Drag is grid-independent; downforce is not yet.</li>
+      </ol>
+    </div>
+  </Chapter>
+
+  <CaseFooter current={p} limits={limits} next="A finer, more uniform mesh around the floor and rear wing, and a transient (DES) run, for a real downforce answer." />
+</Base>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  .split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 960px) { .split, .split--even { grid-template-columns: minmax(0, 1fr); } }
+  .stack { display: grid; gap: 1rem; min-width: 0; }
+
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(1rem, 3vw, 3rem); border-block: 1px solid var(--ink); padding-block: 1.5rem; }
+  .pair__card { display: grid; gap: 0.35rem; }
+  .pair__v { font-family: var(--font-display); font-weight: 700; font-stretch: 66%; font-size: clamp(2.4rem, 6vw, 5rem); line-height: 0.95; letter-spacing: -0.02em; }
+  .pair__delta { display: grid; gap: 0.4rem; text-align: center; padding: 0.75rem 1rem; border: 1px solid var(--ink); }
+  .pair__delta span:first-child { color: var(--cobalt); font-weight: 600; font-size: 1rem; }
+  @media (max-width: 640px) { .pair { grid-template-columns: minmax(0, 1fr); } .pair__delta { justify-self: start; } }
+
+  .legend-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.25rem 0.8rem; align-items: center; max-width: 420px; }
+  .legend-row .mono { font-size: 0.72rem; }
+  .legend-bar { height: 8px; border: 1px solid var(--ink); }
+  .legend-ticks { grid-column: 2; display: flex; justify-content: space-between; color: var(--mute); }
+
+  .meshview { display: grid; gap: 0.9rem; }
+  .meshview :global(img) { width: 100%; height: auto; border: 1px solid var(--ink); background: #fff; }
+  .meshview__cap { font-size: 0.92rem; color: var(--ink-2); }
+  .meshview__y { font-size: 0.75rem; margin-top: 0.4rem; }
+
+  .tyres { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  @media (max-width: 960px) { .tyres { grid-template-columns: minmax(0, 1fr); } }
+  .tyres__view { display: grid; gap: 0.9rem; }
+  .tyres__view :global(img) { width: 100%; height: auto; border: 1px solid var(--ink); }
+  .tyres__note { margin-top: 0.9rem; font-size: 1.02rem; max-width: 56ch; }
+  .tyres__src { font-size: 0.7rem; }
+  .tyres__charts { display: grid; gap: 1.75rem; }
+
+  .qa { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 0 clamp(2rem, 4vw, 4rem); border-top: 1px solid var(--ink); }
+  .qa__item { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); padding: 1.25rem 0; border-bottom: 1px solid var(--hair); }
+  .qa__n { color: var(--cobalt); font-size: 0.75rem; padding-top: 0.2rem; }
+  .qa__q { font-size: 1.15rem; font-weight: 650; font-stretch: 88%; line-height: 1.2; }
+  .qa__a { margin-top: 0.5rem; color: var(--ink-2); font-size: 0.98rem; }
+
+  .sub-h { font-family: var(--font-display); font-weight: 700; font-stretch: 80%; font-size: var(--step-2); }
+  .duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+  @media (max-width: 520px) { .duo { grid-template-columns: minmax(0, 1fr); } }
+  .note { color: var(--ink-2); font-size: 0.95rem; max-width: 60ch; }
+
+  .lesson { display: grid; gap: 1.25rem; max-width: 980px; }
+  .pull { border-left: 3px solid var(--cobalt); padding-left: clamp(1rem, 2.5vw, 2rem); }
+  .pull p { font-size: clamp(1.35rem, 1.1rem + 1vw, 2.1rem); line-height: 1.32; font-style: italic; }
+  .series { list-style: none; display: grid; gap: 0.6rem; font-size: 0.82rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+  .series li { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 1rem; }
+  .series span { color: var(--cobalt); }
+  @media (max-width: 560px) { .series li { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; } }
+</style>

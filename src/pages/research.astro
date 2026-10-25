@@ -1,0 +1,143 @@
+---
+import Base from '../layouts/Base.astro';
+import SectionHead from '../components/SectionHead.astro';
+import CasterMap from '../components/CasterMap.astro';
+import { thesis, papers } from '../data/research';
+import { site } from '../data/site';
+
+const description = 'M.S. thesis on fluid flow and carbon segregation in continuous casting of steel (Purdue University Northwest, 2025) and four coauthored papers, with an interactive map of the caster regions each one studies.';
+const ld = [
+  {
+    '@context': 'https://schema.org', '@type': 'Thesis', name: thesis.title, inSupportOf: thesis.degree,
+    author: { '@type': 'Person', name: site.name }, datePublished: thesis.year,
+    sourceOrganization: { '@type': 'CollegeOrUniversity', name: thesis.institution }, url: thesis.url,
+  },
+  ...papers.map((p) => ({
+    '@context': 'https://schema.org', '@type': 'ScholarlyArticle', headline: p.title, datePublished: p.date,
+    author: p.authors.map((a) => ({ '@type': 'Person', name: a })), isPartOf: p.venue, sameAs: `https://doi.org/${p.doi}`,
+  })),
+];
+const isMe = (a: string) => a.includes('Nandipati');
+---
+
+<Base title="Thesis & papers" description={description} sheet={{ n: 5, label: 'Research' }} jsonLd={ld}>
+  <header class="wrap rhead">
+    <nav class="crumbs mono" aria-label="Breadcrumb"><a href="/">Index</a><span aria-hidden="true">/</span><span aria-current="page">Research</span></nav>
+    <p class="label rhead__k"><span>02</span>Research · Continuous casting of steel</p>
+    <h1 class="rhead__title">Fluid flow.<br />Solidification.<br /><em>Segregation.</em></h1>
+    <p class="lede">Multiphysics CFD of what happens inside a continuous caster while steel solidifies, from argon bubbles in the mold to carbon gathering at the centerline.</p>
+  </header>
+
+  <section class="wrap section thesis" aria-labelledby="thesis-title">
+    <div class="thesis__grid">
+      <div>
+        <p class="label mute">M.S. thesis · {thesis.year}</p>
+        <h2 class="thesis__title" id="thesis-title">{thesis.title}</h2>
+        <p class="thesis__q">{thesis.question}</p>
+        <a class="btn btn--solid thesis__btn" href={thesis.url} target="_blank" rel="noopener noreferrer">Read the full thesis at Purdue <span class="arrow" aria-hidden="true">↗</span><span class="sr-only">(opens in a new tab)</span></a>
+      </div>
+      <table class="tblock" aria-label="Thesis record">
+        <tbody>
+          <tr><th scope="row">Degree</th><td>{thesis.degree}</td></tr>
+          <tr><th scope="row">Institution</th><td>{thesis.institution}</td></tr>
+          <tr><th scope="row">Year</th><td>{thesis.year}</td></tr>
+          <tr><th scope="row">DOI</th><td><a class="link mono" href={thesis.url} target="_blank" rel="noopener noreferrer">{thesis.doi}</a></td></tr>
+          <tr><th scope="row">Repository</th><td>Purdue University Graduate School</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <ol class="methods">
+      {thesis.methods.map((m, i) => (
+        <li data-reveal>
+          <span class="methods__n mono">{String(i + 1).padStart(2, '0')}</span>
+          <h3>{m.term}</h3>
+          <p>{m.detail}</p>
+        </li>
+      ))}
+    </ol>
+    <p class="thesis__find prose">{thesis.findings}</p>
+    <p class="mono mute thesis__src">Summary based on the thesis abstract in Purdue’s open repository.</p>
+  </section>
+
+  <section class="map-band" aria-labelledby="map-title">
+    <div class="wrap section">
+      <SectionHead kicker="Caster map" title="Which part of the caster <em>each paper studies.</em>" id="map-title">
+        <p>Hover or select a publication to light up its region, or pick a region to find the papers. The drawing is a schematic; the liquid core narrows with the square root of distance, the classical law of shell growth.</p>
+      </SectionHead>
+      <CasterMap />
+    </div>
+  </section>
+
+  <section class="wrap section" aria-labelledby="pubs-title">
+    <SectionHead index="—" kicker="Publications" title="Coauthored papers, <em>2024–2025.</em>" id="pubs-title" />
+    <ol class="pubs">
+      {papers.map((p) => (
+        <li class="pub" data-reveal>
+          <p class="pub__year num">{p.year}</p>
+          <div>
+            <p class="label mute">{p.type} · {p.venue}</p>
+            <h3 class="pub__title"><a href={`https://doi.org/${p.doi}`} target="_blank" rel="noopener noreferrer">{p.title}<span class="sr-only"> (opens DOI record in a new tab)</span></a></h3>
+            <p class="pub__sum">{p.summary}</p>
+            <p class="pub__authors">{p.authors.map((a, i) => <>{i > 0 && ', '}{isMe(a) ? <strong>{a}</strong> : a}</>)}</p>
+            <p class="pub__doi mono">doi:{p.doi}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+    <p class="mono mute pubs__note">Coauthored research. Links open the publisher or DOI record; full-text access varies. Author lists from the DOI records.</p>
+  </section>
+</Base>
+
+<style>
+  .rhead { padding-top: clamp(1.5rem, 3vw, 2.5rem); padding-bottom: clamp(2.5rem, 5vw, 4rem); border-bottom: 1px solid var(--ink); }
+  .crumbs { display: flex; gap: 0.6rem; color: var(--mute); font-size: 0.75rem; }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--cobalt); text-decoration: underline; }
+  .rhead__k { display: flex; gap: 0.9rem; color: var(--mute); margin-top: clamp(1.5rem, 3vw, 2.5rem); }
+  .rhead__k span { color: var(--cobalt); }
+  .rhead__title { margin-block: 1rem clamp(1.5rem, 3vw, 2.5rem); font-size: clamp(3rem, 1rem + 7.6vw, 8rem); font-weight: 700; font-stretch: 68%; line-height: 0.88; letter-spacing: -0.035em; }
+  .rhead__title em { font-family: var(--font-text); font-style: italic; font-weight: 400; font-stretch: 100%; letter-spacing: -0.03em; color: var(--cobalt); }
+
+  .thesis__grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  @media (max-width: 960px) { .thesis__grid { grid-template-columns: minmax(0, 1fr); } }
+  .thesis__title { margin-top: 0.8rem; font-size: var(--step-3); font-weight: 650; font-stretch: 82%; line-height: 1.05; max-width: 26ch; }
+  .thesis__q { margin-top: 1.25rem; font-size: 1.15rem; max-width: 52ch; }
+  .thesis__btn { margin-top: 1.75rem; }
+  .tblock { width: 100%; border: 1px solid var(--ink); font-size: 0.9rem; }
+  .tblock th, .tblock td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+  .tblock tr:last-child th, .tblock tr:last-child td { border-bottom: 0; }
+  .tblock th { width: 7rem; font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); border-right: 1px solid var(--rule); }
+  .tblock .link { overflow-wrap: anywhere; }
+
+  .methods { list-style: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: clamp(2.5rem, 5vw, 4rem); border-top: 1px solid var(--ink); }
+  .methods li { padding: 1.25rem 1.25rem 0 0; display: grid; gap: 0.5rem; align-content: start; }
+  .methods li + li { border-left: 1px solid var(--rule); padding-left: 1.25rem; }
+  .methods__n { color: var(--cobalt); font-size: 0.75rem; }
+  .methods h3 { font-size: 1.35rem; font-weight: 700; font-stretch: 80%; }
+  .methods p { color: var(--ink-2); font-size: 0.98rem; }
+  @media (max-width: 900px) {
+    .methods { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .methods li:nth-child(odd) { border-left: 0; padding-left: 0; }
+  }
+  @media (max-width: 520px) {
+    .methods { grid-template-columns: minmax(0, 1fr); }
+    .methods li + li { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); margin-top: 1.25rem; }
+  }
+  .thesis__find { margin-top: clamp(2rem, 4vw, 3rem); font-size: 1.15rem; }
+  .thesis__src { margin-top: 0.75rem; font-size: 0.72rem; }
+
+  .map-band { background: var(--paper-2); border-block: 1px solid var(--rule); }
+
+  .pubs { list-style: none; border-top: 1px solid var(--ink); }
+  .pub { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: 1rem clamp(1rem, 3vw, 3rem); padding: clamp(1.5rem, 3vw, 2.25rem) 0; border-bottom: 1px solid var(--rule); }
+  @media (max-width: 600px) { .pub { grid-template-columns: minmax(0, 1fr); } }
+  .pub__year { font-family: var(--font-display); font-weight: 700; font-stretch: 66%; font-size: clamp(2rem, 4vw, 3rem); line-height: 0.9; }
+  .pub__title { margin-top: 0.5rem; font-size: var(--step-2); font-weight: 650; font-stretch: 85%; line-height: 1.15; max-width: 40ch; }
+  .pub__title a { text-decoration: none; }
+  .pub__title a:hover { color: var(--cobalt); text-decoration: underline; text-underline-offset: 0.15em; }
+  .pub__sum { margin-top: 0.6rem; color: var(--ink-2); max-width: 64ch; }
+  .pub__authors { margin-top: 0.6rem; font-size: 0.92rem; color: var(--mute); }
+  .pub__authors strong { color: var(--ink); font-weight: 650; }
+  .pub__doi { margin-top: 0.5rem; font-size: 0.72rem; color: var(--mute); overflow-wrap: anywhere; }
+  .pubs__note { margin-top: 1.25rem; font-size: 0.72rem; }
+</style>

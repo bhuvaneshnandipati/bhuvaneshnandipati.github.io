@@ -1,0 +1,80 @@
+---
+/**
+ * Grouped column chart in HTML. A non-zero axis origin is allowed only when stated:
+ * pass `axisNote` and the chart prints it beside the title and marks the broken axis.
+ */
+import { fmt, ticks } from '../../lib/scale';
+
+interface Props {
+  title: string;
+  groups: { label: string; values: number[]; activeFor?: string }[];
+  series: { label: string; color: string }[];
+  min: number;
+  max: number;
+  step: number;
+  unit?: string;
+  digits?: number;
+  axisNote?: string;
+  height?: number;
+}
+const { title, groups, series, min, max, step, unit = '', digits = 0, axisNote, height = 240 } = Astro.props;
+const pct = (v: number) => Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+const tks = ticks(min, max, step);
+const tickDigits = Number.isInteger(step) ? 0 : String(step).split('.')[1].length;
+---
+
+<figure class="cols">
+  <figcaption class="cols__head">
+    <span class="cols__title">{title}{unit && <span class="mute"> [{unit}]</span>}</span>
+    {axisNote && <span class="cols__note mono">{axisNote}</span>}
+  </figcaption>
+  {series.length > 1 && (
+    <p class="cols__legend mono" aria-hidden="true">{series.map((s) => <span><i style={`background:${s.color}`}></i>{s.label}</span>)}</p>
+  )}
+  <div class="cols__plot" style={`--h:${height}px`}>
+    <div class="cols__y" aria-hidden="true">
+      {tks.map((t) => <span class="mono" style={`bottom:${pct(t)}%`}>{fmt(t, tickDigits)}</span>)}
+    </div>
+    <div class="cols__area" role="table" aria-label={`${title}${axisNote ? ` (${axisNote})` : ''}`}>
+      {tks.map((t) => <span class="cols__grid" style={`bottom:${pct(t)}%`} aria-hidden="true"></span>)}
+      {min !== 0 && <span class="cols__break" aria-hidden="true"></span>}
+      {groups.map((g) => (
+        <div class="cols__group" role="row" data-active-for={g.activeFor}>
+          <div class="cols__bars">
+            {g.values.map((v, i) => (
+              <span class="cols__bar" role="cell" style={`--c:${series[i].color}; height:${pct(v)}%`}>
+                <span class="cols__val mono"><span class="sr-only">{g.label}, {series[i].label}: </span>{fmt(v, digits)}</span>
+              </span>
+            ))}
+          </div>
+          <span class="cols__x mono" role="rowheader">{g.label}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+</figure>
+
+<style>
+  .cols { min-width: 0; }
+  .cols__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.3rem 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--ink); }
+  .cols__title { font-family: var(--font-display); font-weight: 650; font-stretch: 85%; font-size: 1.1rem; }
+  .cols__note { font-size: 0.7rem; color: var(--warm); }
+  .cols__legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-top: 0.6rem; font-size: 0.72rem; color: var(--mute); }
+  .cols__legend i { display: inline-block; width: 10px; height: 10px; margin-right: 0.4rem; vertical-align: -1px; }
+  .cols__plot { display: grid; grid-template-columns: 2.8rem minmax(0, 1fr); margin-top: 1.75rem; }
+  .cols__y { position: relative; height: var(--h); }
+  .cols__y span { position: absolute; right: 0.5rem; transform: translateY(50%); font-size: 0.66rem; color: var(--mute); }
+  .cols__area { position: relative; height: var(--h); display: flex; gap: 6%; padding-inline: 4%; border-left: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+  .cols__grid { position: absolute; left: 0; right: 0; height: 1px; background: var(--hair); }
+  .cols__break { position: absolute; left: -6px; bottom: 6px; width: 11px; height: 8px; background: linear-gradient(160deg, transparent 40%, var(--ink) 40% 52%, transparent 52%), linear-gradient(160deg, transparent 62%, var(--ink) 62% 74%, transparent 74%); background-color: var(--paper); }
+  .cols__group { position: relative; flex: 1; display: grid; }
+  .cols__bars { display: flex; align-items: flex-end; gap: 6%; height: var(--h); }
+  .cols__bar { position: relative; flex: 1; min-height: 1px; transition: height 0.5s var(--ease-out); }
+  .cols__bar::before { content: ''; position: absolute; inset: 0; background: var(--c); transition: opacity 0.3s; }
+  .cols__val { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 0.25rem; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+  .cols__x { position: absolute; top: calc(100% + 0.5rem); left: 0; right: 0; text-align: center; font-size: 0.72rem; line-height: 1.25; color: var(--ink-2); }
+  .cols__plot { padding-bottom: 2.6rem; }
+  :global(state-switch[data-state]) .cols__group[data-active-for]:not(.is-active) .cols__bar::before { opacity: 0.22; }
+  :global(state-switch[data-state]) .cols__group[data-active-for]:not(.is-active) .cols__val { color: var(--mute); font-weight: 400; }
+  :global(state-switch[data-state]) .cols__group.is-active .cols__x { color: var(--ink); font-weight: 600; }
+</style>

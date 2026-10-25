@@ -1,0 +1,29 @@
+---
+/**
+ * Bow-shock positions from the Orion report (Mach number traced along horizontal lines):
+ *   Mach 2: (x, y) = (−1.75, 0), (−1.8, 1), (−1.45, 2.6), (−1, 4) m
+ *   Mach 6: (x, y) = (−1.25, 0), (−1.25, 1), (−0.8, 2.6), (0.1, 4) m
+ * Capsule outline is schematic. x = 0 at the heat-shield nose, flow along +x.
+ */
+import { shockPoints } from '../../data/orion';
+interface Props { size?: number }
+const { size = 240 } = Astro.props;
+const s = 26, ox = 92, oy = 120;
+const P = (x: number, y: number) => `${(ox + x * s).toFixed(1)} ${(oy - y * s).toFixed(1)}`;
+const path = (pts: [number, number][]) => {
+  const full = [...pts.slice(1).reverse().map(([x, y]) => [x, -y] as [number, number]), ...pts];
+  return 'M' + full.map(([x, y]) => P(x, y)).join(' L');
+};
+const capsule = `M${P(0, 0)} Q${P(0.05, 1.6)} ${P(0.42, 2.5)} L${P(3.3, 1.1)} L${P(3.3, -1.1)} L${P(0.42, -2.5)} Q${P(0.05, -1.6)} ${P(0, 0)} Z`;
+---
+
+<svg class="glyph shock" viewBox="0 0 240 240" width={size} height={size} role="img" aria-label="Bow shock positions from the report: the Mach 6 shock stands closer to the capsule than the Mach 2 shock">
+  <line x1="8" y1={oy} x2="232" y2={oy} stroke="currentColor" stroke-opacity="0.25" stroke-dasharray="2 4" />
+  <path d={capsule} fill="currentColor" />
+  <path class="shock__m2" d={path(shockPoints.mach2)} fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 4" />
+  <path class="shock__m6" d={path(shockPoints.mach6)} fill="none" stroke="var(--cobalt)" stroke-width="2" />
+  {shockPoints.mach2.map(([x, y]) => <circle cx={ox + x * s} cy={oy - y * s} r="2.4" fill="var(--paper)" stroke="currentColor" />)}
+  {shockPoints.mach6.map(([x, y]) => <circle cx={ox + x * s} cy={oy - y * s} r="2.4" fill="var(--cobalt)" />)}
+  <text x="168" y="214" font-family="var(--font-mono)" font-size="10" fill="currentColor">M 2 - - -</text>
+  <text x="168" y="228" font-family="var(--font-mono)" font-size="10" fill="var(--cobalt)">M 6 ——</text>
+</svg>

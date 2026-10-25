@@ -1,0 +1,177 @@
+---
+import Base from '../../layouts/Base.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import ChapterRail from '../../components/ChapterRail.astro';
+import Chapter from '../../components/Chapter.astro';
+import SpecSheet from '../../components/SpecSheet.astro';
+import StateSwitch from '../../components/StateSwitch.astro';
+import LinePlot from '../../components/charts/LinePlot.astro';
+import PitotCheck from '../../components/PitotCheck.astro';
+import CaseFooter from '../../components/CaseFooter.astro';
+import { Image } from 'astro:assets';
+import { projectBySlug } from '../../data/projects';
+import { shockPoints, cpTable, freestream, mesh } from '../../data/orion';
+import { stagnationTemperature } from '../../lib/gas';
+import { fmt } from '../../lib/scale';
+import mach2 from '../../assets/img/orion-mach2.jpg';
+import mach6 from '../../assets/img/orion-mach6.jpg';
+import temp6 from '../../assets/img/orion-temperature.jpg';
+
+const p = projectBySlug('orion-capsule');
+const T0_6 = stagnationTemperature(freestream.mach6.T, 6);
+const limits = [
+  'The Cp comparison with published curves is qualitative; the report gives no quantified validation error.',
+  'No grid-convergence study: one mesh of 42,956 elements.',
+  'High-temperature chemical reactions and rarefied-gas effects are left for future work.',
+  'The temperature field is a flow visualization, not a validated heat-shield temperature prediction.',
+  'The two Mach-number contours use separate colour scales and plotting extents, so compare shock positions through the traced data, not the colours.',
+];
+const ld = [{
+  '@context': 'https://schema.org', '@type': 'CreativeWork', name: p.title, description: p.description,
+  author: [{ '@type': 'Person', name: 'Sai Bhuvanesh Nandipati' }, { '@type': 'Person', name: 'Patil Saurav Sachin' }, { '@type': 'Person', name: 'Sumedh Shirish Kulkarni' }, { '@type': 'Person', name: 'Gaurav Sharma' }],
+  keywords: 'hypersonic flow, supersonic flow, bow shock, ANSYS Fluent, re-entry capsule',
+}];
+---
+
+<Base title={p.title} description={p.description} sheet={{ n: 4, label: p.title }} ogType="article" jsonLd={ld}>
+  <CaseHeader project={p} reports={[{ href: '/reports/orion-report.pdf', label: 'Full project report (PDF)' }]} />
+  <ChapterRail />
+
+  <Chapter id="problem" n={1} title="Two regimes, <em>one blunt body.</em>" intro="How do the shock system and the surrounding flow change between supersonic and hypersonic conditions?">
+    <div class="split">
+      <div class="prose">
+        <p>A re-entry capsule has to survive aerothermal loads that change character as it slows through the atmosphere. This team project modelled an Orion-like crew module, the same basic blunt-body shape as the Apollo command module, at zero angle of attack in two freestream conditions.</p>
+        <p>The study compares Mach number, pressure, temperature, velocity and surface pressure coefficient between a supersonic case and a hypersonic one, and asks what changes in the shock layer when the Mach number triples.</p>
+      </div>
+      <div class="cases">
+        {[freestream.mach2, freestream.mach6].map((c, i) => (
+          <div class="case-card">
+            <p class="label mute">Case {i + 1} · {i === 0 ? 'supersonic' : 'hypersonic'}</p>
+            <p class="case-card__m num">M {c.M}</p>
+            <dl class="mono">
+              <div><dt>p<sub>∞</sub></dt><dd>{fmt(c.p)} Pa</dd></div>
+              <div><dt>T<sub>∞</sub></dt><dd>{c.T} K</dd></div>
+              <div><dt>α</dt><dd>0°</dd></div>
+            </dl>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Chapter>
+
+  <Chapter id="method" n={2} tone="band" title="Axisymmetric, <em>density-based, real-gas properties.</em>" intro="The capsule is symmetric about its axis, so it was modelled as a 2-D axisymmetric case. Geometry follows Votta et al. (2009), Journal of Spacecraft and Rockets.">
+    <div class="split split--even">
+      <SpecSheet title="Geometry and domain" rows={[
+        { k: 'CAD', v: 'SpaceClaim, 2-D axisymmetric negative of the capsule' },
+        { k: 'Upstream', v: 'Inlet boundary 3 m ahead of the body' },
+        { k: 'Downstream', v: 'Outlet boundary 5.7 m behind the body' },
+        { k: 'Boundaries', v: 'Pressure far-field; wall on the capsule; symmetry axis' },
+        { k: 'Operating p', v: 'Set to 0 Pa, so far-field pressures are absolute' },
+      ]} />
+      <SpecSheet title="ANSYS Fluent setup" rows={[
+        { k: 'Solver', v: 'Density-based, double precision, energy equation on' },
+        { k: 'Turbulence', v: 'Realizable k-ε' },
+        { k: 'Gas', v: 'Ideal gas, molecular weight 28.966' },
+        { k: 'Specific heat', v: 'Fourth-degree piecewise polynomial in temperature' },
+        { k: 'Conductivity', v: 'Piecewise-linear, 36 points from 250 K to 2000 K' },
+        { k: 'Viscosity', v: 'Sutherland’s law' },
+        { k: 'Discretization', v: 'Second-order upwind (flow)' },
+        { k: 'Convergence', v: 'Absolute residuals 10⁻⁶ for continuity, momentum and energy' },
+      ]} />
+    </div>
+  </Chapter>
+
+  <Chapter id="simulation" n={3} title="A fine mesh <em>where the boundary layer lives.</em>" intro="Meshed in ANSYS Meshing with body sizing for the domain and tighter edge sizing along the capsule wall.">
+    <div class="meshnums" data-reveal>
+      <div><p class="mn__v num">{fmt(mesh.elements)}</p><p class="mn__l">elements</p></div>
+      <div><p class="mn__v num">{fmt(mesh.nodes)}</p><p class="mn__l">nodes</p></div>
+      <div><p class="mn__v num">4<span> mm</span></p><p class="mn__l">body sizing (soft)</p></div>
+      <div><p class="mn__v num">2<span> mm</span></p><p class="mn__l">edge sizing on the capsule</p></div>
+      <div><p class="mn__v num">5.09<span> mm</span></p><p class="mn__l">minimum edge length</p></div>
+    </div>
+    <p class="prose">Edges were grouped into three named selections (far field, capsule body and symmetry axis) so the boundary conditions could be assigned in Fluent. Edge sizing along the capsule puts more cells in the boundary layer than the soft body sizing allows elsewhere.</p>
+  </Chapter>
+
+  <Chapter id="results" n={4} tone="band" title="At Mach 6 the shock <em>moves in.</em>" intro="Along the axis, the bow shock sits 1.75 m ahead of the nose at Mach 2 and 1.25 m at Mach 6. Toggle the fields; the plot below traces the shock from the report’s Mach-number data.">
+    <StateSwitch label="Field" options={[{ id: 'm2', label: 'Mach 2' }, { id: 'm6', label: 'Mach 6' }, { id: 't6', label: 'Mach 6 · temperature' }]}>
+      <div class="fields">
+        <div data-when="m2"><Image src={mach2} alt="Mach-number contour for the Mach 2 case with a detached bow shock well ahead of the capsule" widths={[640, 1000, 1250]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 2: Mach-number contour. Original simulation figure from the final project archive.</p></div>
+        <div data-when="m6"><Image src={mach6} alt="Mach-number contour for the Mach 6 case showing the bow shock closer to the capsule" widths={[640, 1000, 1240]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 6: Mach-number contour. Its colour scale and plotting extent differ from the Mach 2 figure.</p></div>
+        <div data-when="t6"><Image src={temp6} alt="Static temperature contour for the Mach 6 case showing the heated shock layer" widths={[640, 1000, 1240]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 6: static temperature. Temperature rises through the bow shock, falls through the expansion around the shoulder and rises again through the oblique shock. A flow visualization, not a heat-shield prediction.</p></div>
+      </div>
+    </StateSwitch>
+    <div class="split split--even">
+      <LinePlot
+        title="Bow-shock position, traced from Mach-number data"
+        x={{ min: -2, max: 0.5, step: 0.5, label: 'x (m), nose at 0, flow →', digits: 1 }}
+        y={{ min: 0, max: 4.5, step: 1, label: 'distance from axis, y (m)' }}
+        series={[
+          { label: 'Mach 2', color: '#101315', points: shockPoints.mach2.map(([x, y]) => [x, y]), dash: '6 4' },
+          { label: 'Mach 6', color: '#2340c4', points: shockPoints.mach6.map(([x, y]) => [x, y]) },
+        ]}
+        desc="At y = 0, 1, 2.6 and 4 metres, the Mach 2 shock sits at x = −1.75, −1.8, −1.45 and −1 metres; the Mach 6 shock at −1.25, −1.25, −0.8 and +0.1 metres."
+        caption="Where the Mach number drops along horizontal lines at y = 0, 1, 2.6 and 4 m (report, section 9.1). The hypersonic shock stands closer at every height."
+      />
+      <LinePlot
+        title="Surface pressure coefficient along the body"
+        x={{ min: 0, max: 1, step: 0.2, label: 'x / L (L = 3.302 m)', digits: 1 }}
+        y={{ min: -0.5, max: 2, step: 0.5, label: 'Cp', digits: 1 }}
+        series={[
+          { label: 'Mach 2', color: '#101315', points: cpTable.map((r) => [r.xl, r.m2]), dash: '6 4' },
+          { label: 'Mach 6', color: '#2340c4', points: cpTable.map((r) => [r.xl, r.m6]) },
+        ]}
+        desc="At the nose Cp is 1.657 for Mach 2 and 1.85 for Mach 6. It falls through the expansion near x/L 0.15 to 0.26 and stays near zero to the base."
+        caption="Values at the six reference points of the report’s Table 3. Pressure peaks at the nose behind the bow shock, collapses through the expansion at the shoulder, then recovers slightly through a weak oblique shock near the base, with relative strength Δp/p of 0.68 at Mach 2 against 0.154 at Mach 6."
+      />
+    </div>
+  </Chapter>
+
+  <Chapter id="insight" n={5} title="A textbook check <em>on the nose pressure.</em>" intro="Added for this site: the stagnation-point Cp behind a normal shock follows from the Rayleigh pitot formula. Set the Mach number and compare it with the simulated nose values.">
+    <PitotCheck />
+    <div class="split">
+      <div class="prose">
+        <p><strong>Mach 2 matches to 0.02%.</strong> The simulated nose C<sub>p</sub> of 1.657 against a theoretical 1.6573 is a good sign that the far-field conditions, the shock capture and the reference values were set up consistently.</p>
+        <p><strong>Mach 6 sits 1.8% above it</strong>, and above the γ = 1.4 hypersonic limit of 1.839. A plausible reason, not tested in the report: the setup uses a temperature-dependent specific heat, and behind a Mach 6 shock the gas is hot (the freestream stagnation temperature is about {fmt(T0_6)} K for a calorically perfect gas). A lower effective γ raises the stagnation pressure coefficient toward 2.</p>
+        <p>The report’s own conclusion holds across every field: the bow shock, expansion, oblique shock and vortices all sit closer to the body at Mach 6, and the entropy layer and turbulent dissipation are much more pronounced.</p>
+      </div>
+      <aside class="credit">
+        <p class="label mute">Team</p>
+        <p>Gas Dynamics course project, Department of Mechanical Engineering, BITS Pilani.</p>
+        <ul class="mono"><li>Sai Bhuvanesh Nandipati</li><li>Patil Saurav Sachin</li><li>Sumedh Shirish Kulkarni</li><li>Gaurav Sharma</li></ul>
+        <p class="mono mute">Supervised by Dr. Aneesh A M</p>
+      </aside>
+    </div>
+  </Chapter>
+
+  <CaseFooter current={p} limits={limits} next="Model high-temperature chemistry and rarefied-gas effects, the report’s stated future work, and add a grid-convergence study." />
+</Base>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  .split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 960px) { .split, .split--even { grid-template-columns: minmax(0, 1fr); } }
+
+  .cases { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--ink); border: 1px solid var(--ink); }
+  .case-card { background: var(--paper); padding: clamp(1rem, 2.5vw, 1.75rem); display: grid; gap: 0.6rem; }
+  .case-card__m { font-family: var(--font-display); font-weight: 700; font-stretch: 64%; font-size: clamp(3rem, 7vw, 5.5rem); line-height: 0.9; }
+  .case-card dl { display: grid; gap: 0.3rem; font-size: 0.85rem; }
+  .case-card dl div { display: flex; justify-content: space-between; border-bottom: 1px solid var(--hair); padding-bottom: 0.3rem; }
+  .case-card dt { color: var(--mute); }
+
+  .meshnums { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+  .meshnums > div { padding: 1.25rem 1rem 0 0; }
+  .meshnums > div + div { border-left: 1px solid var(--rule); padding-left: 1rem; }
+  .mn__v { font-family: var(--font-display); font-weight: 700; font-stretch: 66%; font-size: clamp(2rem, 4vw, 3.6rem); line-height: 0.95; }
+  .mn__v span { font-size: 0.45em; color: var(--mute); }
+  .mn__l { margin-top: 0.4rem; font-size: 0.9rem; color: var(--ink-2); }
+  @media (max-width: 860px) {
+    .meshnums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .meshnums > div:nth-child(odd) { border-left: 0; padding-left: 0; }
+  }
+
+  .fields :global(img) { width: 100%; height: auto; border: 1px solid var(--ink); background: #fff; }
+  .fields__cap { margin-top: 0.7rem; font-size: 0.92rem; color: var(--ink-2); max-width: 75ch; }
+
+  .credit { display: grid; gap: 0.75rem; padding: clamp(1.25rem, 2.5vw, 2rem); border: 1px solid var(--ink); }
+  .credit ul { list-style: none; display: grid; gap: 0.3rem; font-size: 0.85rem; }
+</style>

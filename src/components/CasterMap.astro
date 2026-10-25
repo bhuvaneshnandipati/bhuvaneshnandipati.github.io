@@ -1,0 +1,200 @@
+---
+/**
+ * Schematic slab caster (not to scale). Hovering, focusing or selecting a publication
+ * highlights the part of the machine it studies; selecting a region highlights the papers.
+ * The liquid core narrows as W/2 − k√s, the classical square-root law of shell growth.
+ */
+import { papers, thesis } from '../data/research';
+
+const R = 200, cx0 = 190, ystart = 220, yarc = 300, xend = 770, half = 40;
+// centreline: vertical from (190, 220) to (190, 300), quarter arc to (390, 500), horizontal to 770
+const vertLen = yarc - ystart;
+const arcLen = (Math.PI / 2) * R;
+const total = vertLen + arcLen + (xend - (cx0 + R));
+const at = (s: number, off: number) => {
+  // off > 0 is towards the outer (left/bottom) edge
+  if (s <= vertLen) return [cx0 - off, ystart + s];
+  if (s <= vertLen + arcLen) {
+    const th = Math.PI - (s - vertLen) / R; // 180° → 90°
+    const r = R + off;
+    return [cx0 + R + r * Math.cos(th), yarc + r * Math.sin(th)];
+  }
+  return [cx0 + R + (s - vertLen - arcLen), yarc + R + off];
+};
+const tipS = total * 0.72;
+const core = (s: number) => Math.max(0, (half - 3) * (1 - Math.sqrt(s / tipS)));
+const N = 80;
+const side = (sign: number) => Array.from({ length: N + 1 }, (_, i) => (i / N) * tipS).map((s) => at(s, sign * core(s)));
+const corePts = [...side(1), ...side(-1).reverse()];
+const coreD = 'M' + corePts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L') + ' Z';
+const strandD = `M${cx0 - half} ${ystart} L${cx0 - half} ${yarc} A${R + half} ${R + half} 0 0 0 ${cx0 + R} ${yarc + R + half} L${xend} ${yarc + R + half} L${xend} ${yarc + R - half} L${cx0 + R} ${yarc + R - half} A${R - half} ${R - half} 0 0 1 ${cx0 + half} ${yarc} L${cx0 + half} ${ystart} Z`;
+const centerD = (() => { const pts = Array.from({ length: 31 }, (_, i) => tipS + (i / 30) * (total - tipS)).map((s) => at(s, 0)); return 'M' + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L'); })();
+const sprayS = Array.from({ length: 9 }, (_, i) => 30 + i * 34);
+const sprays = sprayS.flatMap((s) => [1, -1].map((sg) => {
+  const [x, y] = at(s, sg * (half + 16));
+  const [tx, ty] = at(s, sg * half);
+  return { x, y, tx, ty };
+}));
+const rolls = Array.from({ length: 16 }, (_, i) => 20 + i * 36).flatMap((s) => [1, -1].map((sg) => at(s, sg * (half + 6))));
+const [tipX, tipY] = at(tipS, 0);
+type Zone = 'mold' | 'sprays' | 'strand' | 'whole';
+const items: { id: string; label: string; title: string; zones: Zone[]; href: string; kind: string }[] = [
+  { id: 'thesis', label: 'M.S. thesis · 2025', title: thesis.title, zones: ['mold', 'strand'], href: thesis.url, kind: 'Thesis' },
+  ...papers.map((p, i) => ({ id: `p${i}`, label: `${p.type} · ${p.year}`, title: p.title, zones: p.zones, href: `https://doi.org/${p.doi}`, kind: p.venue })),
+];
+const zoneNames: Record<Zone, string> = { mold: 'Mold & argon injection', sprays: 'Secondary spray cooling', strand: 'Shell growth & centerline', whole: 'Whole caster' };
+---
+
+<caster-map class="cm">
+  <div class="cm__fig">
+    <svg viewBox="0 0 800 590" role="img" aria-labelledby="cm-title cm-desc">
+      <title id="cm-title">Schematic of a slab caster</title>
+      <desc id="cm-desc">Molten steel flows from the tundish through a submerged nozzle into a water-cooled mold, where a solid shell forms. The strand bends through spray cooling until the liquid core closes at the centerline.</desc>
+      <g class="cm__zone" data-zone="whole">
+        <path d={strandD} class="cm__strand" />
+      </g>
+      <g class="cm__zone" data-zone="strand">
+        <path d={coreD} class="cm__core" />
+        <path d={centerD} class="cm__center" />
+        <circle cx={tipX} cy={tipY} r="4" class="cm__tip" />
+      </g>
+      <g class="cm__rolls" aria-hidden="true">{rolls.map(([x, y]) => <circle cx={x.toFixed(1)} cy={y.toFixed(1)} r="5" />)}</g>
+      <g class="cm__zone" data-zone="sprays">
+        {sprays.map((s) => (
+          <g>
+            <path d={`M${s.x.toFixed(1)} ${s.y.toFixed(1)} L${s.tx.toFixed(1)} ${s.ty.toFixed(1)}`} class="cm__fan" />
+            <circle cx={s.x.toFixed(1)} cy={s.y.toFixed(1)} r="3.2" class="cm__nozzle" />
+          </g>
+        ))}
+      </g>
+      <g class="cm__zone" data-zone="mold">
+        <rect x={cx0 - half - 10} y="118" width={half * 2 + 20} height="104" class="cm__mold" />
+        <rect x={cx0 - half} y="118" width={half * 2} height="104" class="cm__melt" />
+        <rect x={cx0 - 7} y="78" width="14" height="96" class="cm__sen" />
+        {[[176, 150], [204, 162], [184, 186], [198, 140], [212, 196], [170, 204]].map(([x, y]) => <circle cx={x} cy={y} r="2.6" class="cm__bubble" />)}
+      </g>
+      <path d="M70 30 H320 L300 80 H90 Z" class="cm__tundish" />
+      <g class="cm__labels">
+        <text x="330" y="52">Tundish</text>
+        <text x="270" y="150" data-zone-label="mold">Mold · argon injection</text>
+        <text x="270" y="170" class="cm__sub">mold flow, jet, meniscus</text>
+        <text x="40" y="300" data-zone-label="sprays">Spray</text>
+        <text x="40" y="318" data-zone-label="sprays">cooling</text>
+        <text x="300" y="400" data-zone-label="strand">Liquid core</text>
+        <text x={tipX - 60} y="574" data-zone-label="strand">↑ Shell closes</text>
+        <text x="470" y="492" data-zone-label="strand">Centerline segregation</text>
+        <text x="600" y="448" class="cm__sub">casting direction →</text>
+      </g>
+      <text x="790" y="580" text-anchor="end" class="cm__note">Schematic, not to scale</text>
+    </svg>
+    <div class="cm__zones" role="group" aria-label="Highlight a region of the caster">
+      {(['mold', 'sprays', 'strand', 'whole'] as Zone[]).map((z) => <button type="button" class="cm__zbtn" data-zone-btn={z} aria-pressed="false">{zoneNames[z]}</button>)}
+    </div>
+  </div>
+  <ol class="cm__list">
+    {items.map((it) => (
+      <li class="cm__item" data-zones={it.zones.join(' ')}>
+        <button type="button" class="cm__pick" aria-pressed="false" data-zones={it.zones.join(' ')}>
+          <span class="label mute">{it.label}</span>
+          <span class="cm__title">{it.title}</span>
+          <span class="cm__tags mono">{it.zones.map((z) => zoneNames[z]).join(' · ')}</span>
+        </button>
+        <a class="cm__doi link mono" href={it.href} target="_blank" rel="noopener noreferrer">DOI record <span class="sr-only">for {it.title} (opens in a new tab)</span>↗</a>
+      </li>
+    ))}
+  </ol>
+</caster-map>
+
+<script>
+  class CasterMap extends HTMLElement {
+    connectedCallback() {
+      const zones = Array.from(this.querySelectorAll<SVGGElement>('.cm__zone'));
+      const labels = Array.from(this.querySelectorAll<SVGTextElement>('[data-zone-label]'));
+      const items = Array.from(this.querySelectorAll<HTMLElement>('.cm__item'));
+      const picks = Array.from(this.querySelectorAll<HTMLButtonElement>('.cm__pick'));
+      const zbtns = Array.from(this.querySelectorAll<HTMLButtonElement>('[data-zone-btn]'));
+      let locked: string[] | null = null;
+      const show = (active: string[] | null) => {
+        this.classList.toggle('has-focus', !!active);
+        const on = (z: string) => !!active && (active.includes(z) || active.includes('whole'));
+        zones.forEach((g) => g.classList.toggle('is-on', on(g.dataset.zone!)));
+        labels.forEach((t) => t.classList.toggle('is-on', on(t.dataset.zoneLabel!)));
+        items.forEach((li) => {
+          const zs = li.dataset.zones!.split(' ');
+          li.classList.toggle('is-on', !!active && zs.some((z) => active.includes(z) || z === 'whole'));
+        });
+      };
+      const reset = () => show(locked);
+      picks.forEach((b) => {
+        const zs = b.dataset.zones!.split(' ');
+        b.addEventListener('mouseenter', () => show(zs));
+        b.addEventListener('focus', () => show(zs));
+        b.addEventListener('mouseleave', reset);
+        b.addEventListener('blur', reset);
+        b.addEventListener('click', () => {
+          const same = b.getAttribute('aria-pressed') === 'true';
+          picks.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          zbtns.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', String(!same));
+          locked = same ? null : zs;
+          show(locked);
+        });
+      });
+      zbtns.forEach((b) => {
+        b.addEventListener('click', () => {
+          const z = b.dataset.zoneBtn!;
+          const same = b.getAttribute('aria-pressed') === 'true';
+          zbtns.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          picks.forEach((x) => x.setAttribute('aria-pressed', 'false'));
+          b.setAttribute('aria-pressed', String(!same));
+          locked = same ? null : [z];
+          show(locked);
+        });
+      });
+    }
+  }
+  customElements.define('caster-map', CasterMap);
+</script>
+
+<style>
+  .cm { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  @media (max-width: 1000px) { .cm { grid-template-columns: minmax(0, 1fr); } }
+  .cm__fig { border: 1px solid var(--ink); background: var(--paper); padding: clamp(0.5rem, 1.5vw, 1rem); }
+  .cm svg { width: 100%; height: auto; }
+  .cm__strand { fill: #d9dcd5; stroke: var(--ink); stroke-width: 1.5; }
+  .cm__core { fill: #e9864f; stroke: #b6542a; stroke-width: 1; opacity: 0.9; }
+  .cm__center { fill: none; stroke: var(--warm); stroke-width: 2; stroke-dasharray: 5 4; }
+  .cm__tip { fill: var(--warm); }
+  .cm__rolls circle { fill: var(--paper); stroke: var(--mute); stroke-width: 1; }
+  .cm__fan { stroke: #4a8fd1; stroke-width: 2; opacity: 0.7; }
+  .cm__nozzle { fill: var(--ink); }
+  .cm__mold { fill: #8fb3cf; stroke: var(--ink); stroke-width: 1.5; }
+  .cm__melt { fill: #e9864f; }
+  .cm__sen { fill: var(--paper); stroke: var(--ink); stroke-width: 1.5; }
+  .cm__bubble { fill: #fff; stroke: var(--ink); stroke-width: 0.8; }
+  .cm__tundish { fill: #e9864f; stroke: var(--ink); stroke-width: 1.5; }
+  .cm__labels text { font-family: var(--font-mono); font-size: 13px; fill: var(--ink); transition: fill 0.2s, font-weight 0.2s; }
+  .cm__labels .cm__sub { fill: var(--mute); font-size: 11.5px; }
+  .cm__note { font-family: var(--font-mono); font-size: 11px; fill: var(--mute); }
+  .cm__zone { transition: opacity 0.3s; }
+  .cm.has-focus .cm__zone:not(.is-on) { opacity: 0.28; }
+  .cm.has-focus .cm__zone.is-on .cm__strand { stroke: var(--cobalt); stroke-width: 3; }
+  .cm.has-focus .cm__zone.is-on .cm__mold, .cm.has-focus .cm__zone.is-on .cm__sen { stroke: var(--cobalt); stroke-width: 3; }
+  .cm.has-focus .cm__zone.is-on .cm__fan { stroke: var(--cobalt); opacity: 1; }
+  .cm.has-focus .cm__zone.is-on .cm__core { stroke: var(--cobalt); stroke-width: 2.5; }
+  .cm__labels text.is-on { fill: var(--cobalt); font-weight: 700; }
+
+  .cm__zones { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
+  .cm__zbtn { min-height: 40px; padding: 0.4rem 0.75rem; border: 1px solid var(--ink); background: transparent; font-family: var(--font-mono); font-size: 0.72rem; cursor: pointer; }
+  .cm__zbtn:hover { background: var(--paper-2); }
+  .cm__zbtn[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+
+  .cm__list { list-style: none; border-top: 1px solid var(--ink); }
+  .cm__item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.5rem 1rem; align-items: start; padding: 1rem 0.75rem 1rem 0; border-bottom: 1px solid var(--hair); transition: background 0.2s, box-shadow 0.2s; }
+  .cm__item.is-on { background: var(--cobalt-tint); box-shadow: -0.75rem 0 0 var(--cobalt-tint); }
+  .cm__pick { display: grid; gap: 0.3rem; text-align: left; background: none; border: 0; padding: 0; cursor: pointer; }
+  .cm__pick[aria-pressed='true'] .cm__title { color: var(--cobalt); }
+  .cm__title { font-family: var(--font-display); font-weight: 620; font-stretch: 88%; font-size: 1.05rem; line-height: 1.25; }
+  .cm__tags { font-size: 0.7rem; color: var(--mute); }
+  .cm__doi { font-size: 0.72rem; white-space: nowrap; padding-top: 0.15rem; }
+</style>

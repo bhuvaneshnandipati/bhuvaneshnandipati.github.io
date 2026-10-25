@@ -1,0 +1,256 @@
+---
+import Base from '../../layouts/Base.astro';
+import CaseHeader from '../../components/CaseHeader.astro';
+import ChapterRail from '../../components/ChapterRail.astro';
+import Chapter from '../../components/Chapter.astro';
+import SpecSheet from '../../components/SpecSheet.astro';
+import StateSwitch from '../../components/StateSwitch.astro';
+import Figure from '../../components/Figure.astro';
+import CaseFooter from '../../components/CaseFooter.astro';
+import { Image } from 'astro:assets';
+import { projectBySlug } from '../../data/projects';
+import { design, plates, solver, gates, results, extraResults, claims, limits, next } from '../../data/coldplate';
+import { fmt } from '../../lib/scale';
+import treeImg from '../../assets/img/cp-plate-tree.png';
+import parallelImg from '../../assets/img/cp-plate-parallel.png';
+import resultsImg from '../../assets/img/coldplate-results.png';
+import coverImg from '../../assets/img/coldplate-cover.png';
+
+const p = projectBySlug('branching-cold-plate');
+const INLET = 40;
+const verdicts = ['holds', 'holds', 'holds', 'breaks', 'marginal'] as const;
+const verdictLabel = { holds: 'Holds', breaks: 'Breaks', marginal: 'Near limit' };
+const rowScale = (r: (typeof results)[number]) => {
+  const isTemp = r.unit === '°C';
+  const a = isTemp ? r.tree - INLET : r.tree;
+  const b = isTemp ? r.parallel - INLET : r.parallel;
+  const max = Math.max(a, b);
+  return { a: (a / max) * 100, b: (b / max) * 100, isTemp };
+};
+const ld = [{
+  '@context': 'https://schema.org', '@type': 'CreativeWork', name: p.title, description: p.description,
+  author: { '@type': 'Person', name: 'Sai Bhuvanesh Nandipati' }, dateModified: '2026-10', keywords: 'conjugate heat transfer, cold plate, OpenFOAM, Murray law, data-center cooling',
+}];
+---
+
+<Base title={p.title} description={p.description} sheet={{ n: 2, label: p.title }} ogType="article" jsonLd={ld}>
+  <CaseHeader project={p} reports={[{ href: '/reports/coldplate-study.pdf', label: 'Cold-plate comparison (PDF)' }]} />
+  <ChapterRail />
+
+  <Chapter id="problem" n={1} title="Cooling 700 W through a <em>40 mm die.</em>" intro="The question for the CFD was whether the cheaper flow path also runs cooler, or just pumps easier.">
+    <div class="split">
+      <div class="prose">
+        <p>An accelerator package concentrates its heat into a small die, and the cold plate above it has two jobs that pull against each other: spread that heat into the coolant, and do it without a large pressure drop that the pumps must pay for on every rack.</p>
+        <p>The usual answer is a bank of straight parallel channels. This study tests a leaf-vein alternative: a channel tree that branches from a central inlet, sized by a generalised Murray’s law, the rule that keeps wall shear uniform across generations in an ideal branching network.</p>
+        <p>To make the comparison fair, both plates hold the same volume of water and wet the same area of copper. Any difference in temperature or pressure drop then comes from the layout, not from a bigger heat-transfer surface. For an AI data center, the temperature result is the one that matters.</p>
+      </div>
+      <SpecSheet title="Fixed for both plates" rows={[
+        { k: 'Plate', v: design.plate },
+        { k: 'Heat source', v: design.die },
+        { k: 'Coolant', v: design.coolant },
+        { k: 'Fluid volume', v: design.fluidVolume },
+        { k: 'Wetted area', v: design.wettedArea },
+        { k: 'Constraint', v: design.match },
+      ]} />
+    </div>
+  </Chapter>
+
+  <Chapter id="method" n={2} tone="band" title="Two layouts, <em>one constraint set.</em>" intro="Switch between the plates. Copper is orange, coolant blue, the dashed square is the 40 × 40 mm die.">
+    <StateSwitch label="Plate" options={[{ id: 'tree', label: 'Leaf-vein tree' }, { id: 'parallel', label: 'Parallel channels' }]}>
+      <div class="plates">
+        <div class="plates__img">
+          <div data-when="tree"><Image src={treeImg} alt="Leaf-vein cold plate geometry: a channel tree branching from a central inlet to four outlets on a ring, over a 60 mm copper plate" widths={[420, 720]} sizes="(min-width: 900px) 520px, 100vw" loading="lazy" /></div>
+          <div data-when="parallel"><Image src={parallelImg} alt="Parallel cold plate geometry: 30 straight channels fed by manifolds at each end of a 60 mm copper plate" widths={[420, 720]} sizes="(min-width: 900px) 520px, 100vw" loading="lazy" /></div>
+          <p class="mono mute plates__src">Geometry from the project presentation.</p>
+        </div>
+        <div class="plates__spec">
+          {(['tree', 'parallel'] as const).map((k) => (
+            <div data-when={k}>
+              <p class="plates__name">{plates[k].name}</p>
+              <SpecSheet rows={[
+                { k: 'Layout', v: plates[k].layout },
+                { k: 'Channels', v: plates[k].channels },
+                { k: 'Ports', v: plates[k].ports },
+                { k: 'CFD model', v: plates[k].model },
+                { k: 'Channel speed', v: plates[k].velocity },
+                { k: '1-D screening Δp', v: plates[k].screening },
+              ]} />
+            </div>
+          ))}
+          <p class="plates__note">A 1-D network model screened both layouts first: <strong>99 Pa</strong> for the tree against <strong>514 Pa</strong> for the parallel plate. The CFD then had to confirm or overturn claims written down before the run (chapter 05).</p>
+        </div>
+      </div>
+    </StateSwitch>
+  </Chapter>
+
+  <Chapter id="simulation" n={3} title="Eight gates <em>before any number counts.</em>" intro="Water and copper solved together in OpenFOAM. A run is only used once it passes every gate below; both plates passed all eight.">
+    <div class="split split--wide">
+      <SpecSheet title="Solver setup" rows={solver} />
+      <div class="gates" role="table" aria-label="Eight acceptance gates and their values for each plate">
+        <div class="gates__row gates__row--head" role="row">
+          <span role="columnheader">Gate</span><span role="columnheader">Rule</span><span role="columnheader">Tree</span><span role="columnheader">Parallel</span>
+        </div>
+        {gates.map((g) => (
+          <div class="gates__row" role="row" data-reveal>
+            <span role="cell" class="gates__id"><span class="gates__pass" aria-label="Passed">✓</span>{g.id} <strong>{g.name}</strong></span>
+            <span role="cell" class="gates__rule">{g.rule}</span>
+            <span role="cell" class="mono" data-l="Tree: ">{g.tree}</span>
+            <span role="cell" class="mono" data-l="Parallel: ">{g.parallel}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Chapter>
+
+  <Chapter id="results" n={4} tone="band" title="It pumps easier <em>and</em> runs cooler." intro="Coarse-grid results at 700 W, 1.0 L/min, 40 °C inlet. Bars compare the two plates within each row; temperatures are drawn as the rise above the 40 °C inlet.">
+    <div class="headline-nums" data-reveal>
+      <div><p class="hn__v num">−7.1<span> K</span></p><p class="hn__l">peak case temperature<br /><span class="mono mute">66.10 vs 73.21 °C</span></p></div>
+      <div><p class="hn__v num">57<span>%</span></p><p class="hn__l">lower plenum-to-plenum Δp<br /><span class="mono mute">696.2 vs 1,630.2 Pa</span></p></div>
+      <div><p class="hn__v num">1.18<span>×</span></p><p class="hn__l">less entropy generated<br /><span class="mono mute">0.1064 vs 0.1255 W/K</span></p></div>
+    </div>
+    <div class="rtable" role="table" aria-label="Results, tree versus parallel">
+      <div class="rtable__row rtable__row--head" role="row">
+        <span role="columnheader">Quantity</span><span role="columnheader">Tree <i class="sw-tree"></i> vs parallel <i class="sw-par"></i></span><span role="columnheader">Ratio</span>
+      </div>
+      {results.map((r) => {
+        const s = rowScale(r);
+        return (
+          <div class="rtable__row" role="row">
+            <span role="rowheader" class="rtable__q">{r.q}</span>
+            <span role="cell" class="rtable__bars">
+              <span class="rtable__bar rtable__bar--tree" style={`width:${s.a}%`}></span><span class="mono rtable__v">{fmt(r.tree, r.digits)} {r.unit}</span>
+              <span class="rtable__bar rtable__bar--par" style={`width:${s.b}%`}></span><span class="mono rtable__v">{fmt(r.parallel, r.digits)} {r.unit}</span>
+            </span>
+            <span role="cell" class:list={['rtable__ratio', 'mono', { 'is-win': r.better === 'tree' }]}>{r.ratio}</span>
+          </div>
+        );
+      })}
+    </div>
+    <div class="split">
+      <div class="xtable-wrap" tabindex="0" role="region" aria-label="Further quantities table">
+      <table class="xtable">
+        <caption class="label mute">Further quantities</caption>
+        <thead><tr><th scope="col">Quantity</th><th scope="col">Tree</th><th scope="col">Parallel</th><th scope="col">Ratio</th></tr></thead>
+        <tbody>
+          {extraResults.map((r) => <tr><th scope="row">{r.q}</th><td class="mono">{r.tree}</td><td class="mono">{r.parallel}</td><td class="mono">{r.ratio}</td></tr>)}
+        </tbody>
+      </table>
+      </div>
+      <Figure src={resultsImg} alt="Original coarse-grid results slide listing case temperatures, pressure drops, entropy generation and balance checks" caption="The original results slide. Channel pressure drop is distinct from port-to-port pressure drop." source="Project presentation, October 2026" />
+    </div>
+  </Chapter>
+
+  <Chapter id="insight" n={5} title="What the 1-D model got right, <em>and what it missed.</em>" intro="Five claims were stated before the CFD ran. Three hold, one holds only near its limit, and one breaks.">
+    <div class="claims" role="table" aria-label="Claims stated before the run, the 1-D screening value, the CFD value and the verdict">
+      <div class="claims__row claims__row--head" role="row">
+        <span role="columnheader">Claim</span><span role="columnheader">1-D screening</span><span role="columnheader">CFD (coarse)</span><span role="columnheader">Verdict</span>
+      </div>
+      {claims.map((c, i) => (
+        <div class="claims__row" role="row" data-reveal>
+          <span role="rowheader" class="claims__c">{c.claim}</span>
+          <span role="cell" class="mono">{c.screening}</span>
+          <span role="cell" class="mono">{c.cfd}</span>
+          <span role="cell"><span class:list={['verdict', `verdict--${verdicts[i]}`]}>{verdictLabel[verdicts[i]]}</span> <span class="claims__v">{c.verdict}</span></span>
+        </div>
+      ))}
+    </div>
+    <div class="insight-grid">
+      <blockquote class="pull">
+        <p>The tree’s advantage survives the jump from a 1-D estimate to a conjugate 3-D solution, but at half the predicted size. The losses the simple model leaves out, at junctions and plenums, are exactly where branching layouts pay.</p>
+      </blockquote>
+      <Figure src={coverImg} alt="Leaf-vein and straight-channel plates side by side with peak case temperatures of 66.1 and 73.2 °C" caption="Summary slide from the series." source="Project presentation, October 2026" sizes="(min-width: 900px) 420px, 100vw" />
+    </div>
+  </Chapter>
+
+  <CaseFooter current={p} limits={limits} next={next} />
+</Base>
+
+<style>
+  .split { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; }
+  .split--wide { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  @media (max-width: 960px) { .split, .split--wide { grid-template-columns: minmax(0, 1fr); } }
+
+  .plates { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem); align-items: start; }
+  @media (max-width: 860px) { .plates { grid-template-columns: minmax(0, 1fr); } }
+  .plates__img { border: 1px solid var(--ink); background: #fff; padding: clamp(0.75rem, 2vw, 1.5rem); }
+  .plates__img :global(img) { width: 100%; height: auto; }
+  .plates__src { margin-top: 0.6rem; font-size: 0.7rem; }
+  .plates__name { font-family: var(--font-display); font-weight: 700; font-stretch: 78%; font-size: var(--step-3); line-height: 1; margin-bottom: 1rem; }
+  .plates__note { margin-top: 1.5rem; color: var(--ink-2); max-width: 52ch; }
+
+  .gates { border-top: 1px solid var(--ink); }
+  .gates__row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.8fr); gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--hair); font-size: 0.9rem; align-items: baseline; }
+  .gates__row--head { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .gates__id { font-family: var(--font-mono); font-size: 0.78rem; }
+  .gates__id strong { font-family: var(--font-text); font-size: 0.95rem; font-weight: 600; margin-left: 0.3rem; }
+  .gates__pass { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; margin-right: 0.45rem; background: var(--pass); color: #fff; font-size: 0.7rem; }
+  .gates__rule { color: var(--ink-2); }
+  .gates .mono { font-size: 0.78rem; }
+  @media (max-width: 640px) {
+    .gates__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .gates__row--head { display: none; }
+    .gates__id, .gates__rule { grid-column: 1 / -1; }
+    .gates__row > .mono::before { content: attr(data-l); }
+  }
+
+  .headline-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+  .headline-nums > div { padding: 1.5rem 1.5rem 0 0; }
+  .headline-nums > div + div { border-left: 1px solid var(--rule); padding-left: 1.5rem; }
+  .hn__v { font-family: var(--font-display); font-weight: 700; font-stretch: 66%; font-size: clamp(3.2rem, 7vw, 6.4rem); line-height: 0.88; letter-spacing: -0.02em; }
+  .hn__v span { font-size: 0.42em; font-stretch: 90%; color: var(--mute); margin-left: 0.1em; }
+  .hn__l { margin-top: 0.6rem; }
+  @media (max-width: 760px) {
+    .headline-nums { grid-template-columns: minmax(0, 1fr); }
+    .headline-nums > div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--rule); margin-top: 1.25rem; }
+  }
+
+  .rtable { border-top: 1px solid var(--ink); }
+  .rtable__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 6rem; gap: 1.25rem; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid var(--hair); }
+  .rtable__row--head { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .rtable__row--head i { display: inline-block; width: 10px; height: 10px; vertical-align: -1px; margin-left: 0.2rem; }
+  .sw-tree { background: var(--cobalt); }
+  .sw-par { background: var(--mute); }
+  .rtable__q { font-size: 0.95rem; }
+  .rtable__bars { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem; gap: 0.3rem 0.75rem; align-items: center; }
+  .rtable__bar { height: 12px; min-width: 2px; }
+  .rtable__bar--tree { background: var(--cobalt); }
+  .rtable__bar--par { background: var(--mute); }
+  .rtable__v { font-size: 0.75rem; white-space: nowrap; }
+  .rtable__ratio { font-size: 0.9rem; text-align: right; }
+  .rtable__ratio.is-win { color: var(--cobalt); font-weight: 600; }
+  @media (max-width: 640px) {
+    .rtable__row { grid-template-columns: minmax(0, 1fr) auto; }
+    .rtable__row--head span:nth-child(2) { display: none; }
+    .rtable__bars { grid-column: 1 / -1; grid-row: 2; }
+  }
+
+  .xtable { width: 100%; font-size: 0.88rem; border-top: 1px solid var(--ink); }
+  .xtable caption { text-align: left; padding: 0 0 0.75rem; }
+  .xtable th, .xtable td { padding: 0.6rem 0.5rem 0.6rem 0; border-bottom: 1px solid var(--hair); text-align: left; vertical-align: top; }
+  .xtable thead th { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .xtable tbody th { font-weight: 400; }
+  .xtable td { font-size: 0.76rem; white-space: nowrap; padding-right: 1.1rem; }
+  .xtable-wrap { overflow-x: auto; min-width: 0; }
+  .xtable { min-width: 460px; }
+
+  .claims { border-top: 1px solid var(--ink); }
+  .claims__row { display: grid; grid-template-columns: minmax(0, 1.1fr) 7rem 9rem minmax(0, 2fr); gap: 1.25rem; padding: 1.1rem 0; border-bottom: 1px solid var(--hair); align-items: baseline; }
+  .claims__row--head { font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+  .claims__c { font-family: var(--font-display); font-weight: 600; font-stretch: 88%; font-size: 1.05rem; line-height: 1.25; }
+  .claims .mono { font-size: 0.8rem; }
+  .claims__v { color: var(--ink-2); }
+  .verdict { display: inline-block; margin-right: 0.4rem; padding: 0.15rem 0.45rem; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid currentColor; }
+  .verdict--holds { color: var(--pass); }
+  .verdict--breaks { color: var(--warm); }
+  .verdict--marginal { color: #8a5a00; }
+  @media (max-width: 860px) {
+    .claims__row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .claims__row--head { display: none; }
+    .claims__c, .claims__row > span:last-child { grid-column: 1 / -1; }
+  }
+
+  .insight-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+  @media (max-width: 860px) { .insight-grid { grid-template-columns: minmax(0, 1fr); } }
+  .pull { border-left: 3px solid var(--cobalt); padding-left: clamp(1rem, 2.5vw, 2rem); }
+  .pull p { font-size: clamp(1.35rem, 1.1rem + 1vw, 2rem); line-height: 1.35; font-style: italic; }
+</style>

@@ -1,0 +1,50 @@
+---
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  src: ImageMetadata;
+  alt: string;
+  caption?: string;
+  source?: string;
+  frame?: 'dark' | 'light' | 'plain';
+  sizes?: string;
+  eager?: boolean;
+  zoom?: boolean;
+  class?: string;
+}
+const { src, alt, caption, source, frame = 'light', sizes = '(min-width: 1200px) 760px, 100vw', eager = false, zoom = true, class: cls } = Astro.props;
+const full = zoom ? await getImage({ src, width: Math.min(src.width, 1800), format: 'webp' }) : null;
+const widths = [480, 760, 1100, 1500].filter((w) => w <= src.width);
+if (!widths.length) widths.push(src.width);
+---
+
+<figure class:list={['fig', `fig--${frame}`, cls]}>
+  <div class="fig__frame">
+    {full ? (
+      <a href={full.src} target="_blank" rel="noopener" class="fig__zoom" aria-label={`Open full-size image: ${alt} (opens in a new tab)`}>
+        <Image src={src} alt={alt} widths={widths} sizes={sizes} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+      </a>
+    ) : (
+      <Image src={src} alt={alt} widths={widths} sizes={sizes} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+    )}
+  </div>
+  {(caption || source) && (
+    <figcaption class="fig__cap">
+      {caption && <span set:html={caption} />}
+      {source && <span class="fig__src mono">{source}</span>}
+    </figcaption>
+  )}
+</figure>
+
+<style>
+  .fig { min-width: 0; }
+  .fig__frame { position: relative; border: 1px solid var(--ink); background: #fff; overflow: hidden; }
+  .fig--dark .fig__frame { background: var(--tunnel); }
+  .fig--plain .fig__frame { border: 0; background: transparent; }
+  .fig__frame :global(img) { width: 100%; height: auto; }
+  .fig__zoom { display: block; cursor: zoom-in; }
+  .fig__zoom:hover :global(img) { opacity: 0.94; }
+  .fig__cap { display: grid; gap: 0.25rem; margin-top: 0.7rem; font-size: 0.92rem; line-height: 1.5; color: var(--ink-2); max-width: 70ch; }
+  .fig__src { font-size: 0.7rem; color: var(--mute); }
+</style>

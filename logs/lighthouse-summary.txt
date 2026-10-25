@@ -1,0 +1,10 @@
+home                       mobile   perf=98 acce=100 best=100 seo=100 | FCP 1.1 s LCP 2.4 s TBT 0 ms CLS 0
+home                       desktop  perf=100 acce=100 best=100 seo=100 | FCP 0.3 s LCP 0.5 s TBT 0 ms CLS 0
+work_branching-cold-plate  mobile   perf=94 acce=100 best=100 seo=100 | FCP 1.5 s LCP 3.1 s TBT 0 ms CLS 0
+work_branching-cold-plate  desktop  perf=100 acce=100 best=100 seo=100 | FCP 0.4 s LCP 0.6 s TBT 0 ms CLS 0
+work_f1-tyre-road          mobile   perf=96 acce=100 best=100 seo=100 | FCP 1.1 s LCP 2.8 s TBT 0 ms CLS 0
+work_f1-tyre-road          desktop  perf=100 acce=100 best=100 seo=100 | FCP 0.3 s LCP 0.6 s TBT 0 ms CLS 0
+work_orion-capsule         mobile   perf=96 acce=100 best=100 seo=100 | FCP 1.2 s LCP 2.7 s TBT 0 ms CLS 0
+work_orion-capsule         desktop  perf=100 acce=100 best=100 seo=100 | FCP 0.3 s LCP 0.6 s TBT 0 ms CLS 0
+research                   mobile   perf=98 acce=100 best=100 seo=100 | FCP 1.0 s LCP 2.4 s TBT 0 ms CLS 0
+research                   desktop  perf=100 acce=100 best=100 seo=100 | FCP 0.2 s LCP 0.5 s TBT 0 ms CLS 0

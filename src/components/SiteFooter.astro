@@ -1,0 +1,52 @@
+---
+import { site } from '../data/site';
+import { projects } from '../data/projects';
+const year = new Date().getFullYear();
+---
+
+<footer class="ftr">
+  <div class="wrap ftr__grid">
+    <div class="ftr__id">
+      <p class="ftr__name">{site.name}</p>
+      <p class="mono mute">CFD · Heat transfer · Solidification</p>
+    </div>
+    <nav class="ftr__col" aria-label="Case studies">
+      <p class="label mute">Case studies</p>
+      <ul>
+        {projects.map((p) => <li><a href={`/work/${p.slug}/`}>{p.title}</a></li>)}
+      </ul>
+    </nav>
+    <nav class="ftr__col" aria-label="Site">
+      <p class="label mute">Site</p>
+      <ul>
+        <li><a href="/research/">Thesis &amp; papers</a></li>
+        <li><a href="/#about">About</a></li>
+        <li><a href="/#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <div class="ftr__col">
+      <p class="label mute">Direct</p>
+      <ul>
+        <li><a href={`mailto:${site.email}`}>{site.email}</a></li>
+        <li><a href={site.linkedin} rel="noopener noreferrer" target="_blank">LinkedIn <span class="sr-only">(opens in a new tab)</span>↗</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap ftr__base mono mute">
+    <span>© {year} {site.name}</span>
+    <span>Figures and results are from the linked project reports. Flow fields drawn live are analytic, and labelled as such.</span>
+    <a href="#main">Back to top ↑</a>
+  </div>
+</footer>
+
+<style>
+  .ftr { border-top: 1px solid var(--ink); padding-block: clamp(3rem, 6vw, 5rem) 1.5rem; background: var(--paper-2); }
+  .ftr__grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .ftr__name { font-family: var(--font-display); font-weight: 700; font-stretch: 75%; font-size: var(--step-3); line-height: 0.95; letter-spacing: -0.02em; max-width: 9ch; margin-bottom: 0.6rem; }
+  .ftr__col ul { list-style: none; display: grid; gap: 0.35rem; margin-top: 0.8rem; }
+  .ftr__col a { text-decoration: none; overflow-wrap: anywhere; }
+  .ftr__col a:hover { color: var(--cobalt); text-decoration: underline; text-underline-offset: 0.18em; }
+  .ftr__base { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid var(--rule); font-size: 0.72rem; }
+  .ftr__base a { text-decoration: none; }
+  .ftr__base a:hover { color: var(--cobalt); }
+</style>

@@ -1,0 +1,67 @@
+---
+/**
+ * A toggle-button group that drives any descendant marked [data-when="<id>"]:
+ * matching elements are shown, others hidden; elements with [data-active-for]
+ * get an `is-active` class when their id matches. Without JS, everything stays visible.
+ */
+interface Props { label: string; options: { id: string; label: string }[]; initial?: string; class?: string }
+const { label, options, initial = options[0].id, class: cls } = Astro.props;
+---
+
+<state-switch class:list={['sw', cls]} data-initial={initial}>
+  <div class="sw__bar" role="group" aria-label={label}>
+    <span class="sw__label label mute" aria-hidden="true">{label}</span>
+    <div class="sw__btns">
+      {options.map((o) => (
+        <button type="button" class="sw__btn" data-id={o.id} aria-pressed={o.id === initial ? 'true' : 'false'}>{o.label}</button>
+      ))}
+    </div>
+  </div>
+  <p class="sr-only sw__live" aria-live="polite"></p>
+  <slot />
+</state-switch>
+
+<script>
+  class StateSwitch extends HTMLElement {
+    connectedCallback() {
+      const btns = Array.from(this.querySelectorAll<HTMLButtonElement>(':scope > .sw__bar .sw__btn'));
+      const live = this.querySelector<HTMLElement>(':scope > .sw__live');
+      const apply = (id: string, announce = false) => {
+        btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+        this.querySelectorAll<HTMLElement>('[data-when]').forEach((el) => {
+          const on = el.dataset.when!.split(' ').includes(id);
+          el.hidden = !on;
+        });
+        this.querySelectorAll<HTMLElement>('[data-active-for]').forEach((el) => {
+          el.classList.toggle('is-active', el.dataset.activeFor!.split(' ').includes(id));
+        });
+        this.dataset.state = id;
+        if (announce && live) live.textContent = `Showing ${btns.find((b) => b.dataset.id === id)?.textContent ?? id}`;
+      };
+      btns.forEach((b) => b.addEventListener('click', () => apply(b.dataset.id!, true)));
+      apply(this.dataset.initial || btns[0]?.dataset.id || '');
+    }
+  }
+  customElements.define('state-switch', StateSwitch);
+</script>
+
+<style>
+  .sw { display: block; }
+  .sw__bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1.25rem; margin-bottom: 1.25rem; }
+  .sw__btns { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--ink); }
+  .sw__btn {
+    min-height: 44px;
+    padding: 0.55rem 1rem;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+  .sw__btn + .sw__btn { border-left: 1px solid var(--ink); }
+  .sw__btn:hover { background: var(--paper-2); }
+  .sw__btn[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .sw__btn:focus-visible { outline-offset: -4px; outline-color: var(--cobalt); }
+</style>

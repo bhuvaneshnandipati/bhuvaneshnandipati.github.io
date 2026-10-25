@@ -1,0 +1,21 @@
+---
+interface Props { index?: string; kicker: string; title: string; id?: string; level?: 'h2' | 'h3' }
+const { index, kicker, title, id, level = 'h2' } = Astro.props;
+const H = level;
+---
+
+<header class="shead" data-reveal>
+  <p class="shead__kicker label">{index && <span class="shead__idx">{index}</span>}<span>{kicker}</span></p>
+  <H class="shead__title" id={id} set:html={title} />
+  {Astro.slots.has('default') && <div class="shead__aside"><slot /></div>}
+</header>
+
+<style>
+  .shead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.55fr); gap: 1rem clamp(2rem, 5vw, 6rem); align-items: end; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
+  .shead__kicker { grid-column: 1 / -1; display: flex; gap: 0.9rem; color: var(--mute); }
+  .shead__idx { color: var(--cobalt); }
+  .shead__title { font-size: var(--step-4); font-weight: 700; font-stretch: 74%; line-height: 0.94; letter-spacing: -0.03em; max-width: 16ch; }
+  .shead__title :global(em) { font-family: var(--font-text); font-style: italic; font-weight: 400; font-stretch: 100%; letter-spacing: -0.02em; color: var(--cobalt); }
+  .shead__aside { color: var(--ink-2); max-width: 42ch; padding-bottom: 0.4rem; }
+  @media (max-width: 860px) { .shead { grid-template-columns: minmax(0, 1fr); } }
+</style>

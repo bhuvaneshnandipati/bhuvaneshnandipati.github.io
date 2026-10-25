@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import { projects } from '../data/projects';
+---
+
+<Base title="Page not found" description="This page does not exist." sheet={{ n: 0, label: 'Not found' }} noindex>
+  <section class="wrap nf">
+    <p class="label mute">Error 404 · Sheet missing from the set</p>
+    <h1 class="nf__t">This sheet<br />isn’t in the drawing set.</h1>
+    <p class="lede">The link may be out of date. These are the sheets that exist:</p>
+    <ul class="nf__list">
+      <li><a class="link" href="/">Index</a></li>
+      {projects.map((p) => <li><a class="link" href={`/work/${p.slug}/`}>{p.title}</a></li>)}
+      <li><a class="link" href="/research/">Thesis &amp; papers</a></li>
+    </ul>
+  </section>
+</Base>
+
+<style>
+  .nf { padding-block: clamp(4rem, 10vw, 9rem); display: grid; gap: 1.5rem; }
+  .nf__t { font-size: var(--step-5); font-weight: 700; font-stretch: 68%; line-height: 0.9; letter-spacing: -0.035em; }
+  .nf__list { list-style: none; display: grid; gap: 0.5rem; font-size: 1.15rem; }
+</style>

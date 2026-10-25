@@ -1,0 +1,24 @@
+---
+interface Props { rows: readonly { k: string; v: string }[]; title?: string; cols?: 1 | 2 }
+const { rows, title, cols = 1 } = Astro.props;
+---
+
+<div class:list={['spec', { 'spec--2': cols === 2 }]}>
+  {title && <p class="spec__title label">{title}</p>}
+  <dl>
+    {rows.map((r) => (
+      <div class="spec__row"><dt class="mono">{r.k}</dt><dd>{r.v}</dd></div>
+    ))}
+  </dl>
+</div>
+
+<style>
+  .spec { border-top: 1px solid var(--ink); }
+  .spec__title { padding: 0.75rem 0; color: var(--mute); border-bottom: 1px solid var(--rule); }
+  .spec dl { display: grid; }
+  .spec--2 dl { grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); column-gap: 2.5rem; }
+  .spec__row { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--hair); }
+  .spec__row dt { color: var(--mute); font-size: 0.75rem; padding-top: 0.2rem; }
+  .spec__row dd { font-size: 0.98rem; line-height: 1.45; }
+  @media (max-width: 480px) { .spec__row { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; } }
+</style>

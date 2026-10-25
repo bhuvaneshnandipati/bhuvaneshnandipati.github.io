@@ -1,0 +1,89 @@
+---
+import { projects } from '../data/projects';
+import TreeGlyph from './glyphs/TreeGlyph.astro';
+import TyreGlyph from './glyphs/TyreGlyph.astro';
+import ShockGlyph from './glyphs/ShockGlyph.astro';
+interface Props { headingLevel?: 'h2' | 'h3' }
+const { headingLevel = 'h3' } = Astro.props;
+const H = headingLevel;
+const glyphs: Record<string, any> = { 'branching-cold-plate': TreeGlyph, 'f1-tyre-road': TyreGlyph, 'orion-capsule': ShockGlyph };
+---
+
+<ol class="pindex">
+  {projects.map((p) => {
+    const Glyph = glyphs[p.slug];
+    return (
+      <li class="pindex__item" data-reveal>
+        <a class="prow" href={`/work/${p.slug}/`}>
+          <span class="prow__idx">{p.index}</span>
+          <div class="prow__main">
+            <p class="label mute">{p.discipline}</p>
+            <H class="prow__title">{p.title}</H>
+            <p class="prow__stand">{p.standfirst}</p>
+            <p class="prow__meta mono"><span>{p.context}</span>{p.year && <span>{p.year}</span>}</p>
+          </div>
+          <div class="prow__glyph" aria-hidden="false"><Glyph size={220} /></div>
+          <div class="prow__metric">
+            <p class="prow__value"><span class="num">{p.headline.value}</span>{p.headline.unit && <span class="prow__unit">{p.headline.unit}</span>}</p>
+            <p class="prow__mlabel">{p.headline.label}</p>
+            <p class="prow__status mono"><span class="prow__dot" aria-hidden="true"></span>{p.status}</p>
+            <span class="prow__cta mono">Read the case study <span aria-hidden="true">→</span></span>
+          </div>
+        </a>
+      </li>
+    );
+  })}
+</ol>
+
+<style>
+  .pindex { list-style: none; border-top: 1px solid var(--ink); }
+  .pindex__item { border-bottom: 1px solid var(--rule); }
+  .prow {
+    position: relative;
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.9fr);
+    gap: clamp(1rem, 2.5vw, 2.5rem);
+    align-items: start;
+    padding-block: clamp(1.75rem, 3vw, 3rem);
+    text-decoration: none;
+    color: inherit;
+  }
+  .prow::before {
+    content: '';
+    position: absolute;
+    inset: 0 calc(-1 * var(--gutter-r)) 0 calc(-1 * var(--gutter));
+    background: var(--paper-2);
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s;
+  }
+  .prow:hover::before, .prow:focus-visible::before { opacity: 1; }
+  .prow__idx { font-family: var(--font-display); font-weight: 700; font-stretch: 65%; font-size: clamp(2.2rem, 4vw, 3.6rem); line-height: 0.85; color: var(--mute); }
+  .prow:hover .prow__idx { color: var(--cobalt); }
+  .prow__title { margin-top: 0.6rem; font-size: var(--step-4); font-weight: 700; font-stretch: 74%; line-height: 0.92; letter-spacing: -0.03em; }
+  .prow__stand { margin-top: 1rem; max-width: 52ch; color: var(--ink-2); }
+  .prow__meta { display: flex; flex-wrap: wrap; gap: 0.25rem 1.2rem; margin-top: 1rem; color: var(--mute); font-size: 0.75rem; }
+  .prow__glyph { color: var(--ink); justify-self: center; width: 100%; max-width: 220px; }
+  .prow__glyph :global(svg) { width: 100%; height: auto; }
+  .prow__metric { display: grid; gap: 0.5rem; align-content: start; }
+  .prow__value { font-family: var(--font-display); font-weight: 700; font-stretch: 68%; font-size: clamp(2.6rem, 4.6vw, 4.4rem); line-height: 0.9; letter-spacing: -0.02em; white-space: nowrap; }
+  .prow__unit { font-size: 0.45em; margin-left: 0.15em; font-stretch: 90%; color: var(--mute); }
+  .prow__mlabel { font-size: 0.95rem; color: var(--ink-2); max-width: 26ch; }
+  .prow__status { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--mute); font-size: 0.72rem; }
+  .prow__dot { width: 7px; height: 7px; border: 1.5px solid var(--cobalt); border-radius: 50%; }
+  .prow__cta { margin-top: 0.75rem; color: var(--cobalt); font-size: 0.78rem; }
+  .prow:hover .prow__cta { text-decoration: underline; text-underline-offset: 0.2em; }
+
+  @media (max-width: 1080px) {
+    .prow { grid-template-columns: 3.5rem minmax(0, 1fr) minmax(0, 200px); }
+    .prow__metric { grid-column: 2 / -1; grid-template-columns: auto 1fr; column-gap: 1.5rem; align-items: end; }
+    .prow__value { grid-row: span 2; }
+    .prow__status, .prow__cta { grid-column: 1 / -1; }
+  }
+  @media (max-width: 640px) {
+    .prow { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .prow__idx { font-size: 2rem; }
+    .prow__glyph { justify-self: start; max-width: 160px; order: 3; }
+    .prow__metric { grid-column: auto; order: 4; }
+  }
+</style>
