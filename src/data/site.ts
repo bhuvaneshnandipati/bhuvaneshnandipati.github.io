@@ -13,7 +13,14 @@ export const site = {
   linkedin: 'https://www.linkedin.com/in/nandipati-sai-bhuvanesh/',
   linkedinLabel: 'linkedin.com/in/nandipati-sai-bhuvanesh',
   /**
-   * Contact form endpoint. FormSubmit's AJAX endpoint is the one the previous site used.
+   * Web3Forms access key. When set, the form posts to Web3Forms instead of FormSubmit.
+   * The key is designed to be public (it can only send mail to its owner's inbox).
+   * Get one at https://web3forms.com, then paste it here or set PUBLIC_WEB3FORMS_KEY.
+   */
+  web3formsKey: import.meta.env.PUBLIC_WEB3FORMS_KEY || '',
+  /**
+   * Contact form endpoint. FormSubmit's AJAX endpoint is the one the previous site used,
+   * used only when no Web3Forms key is set.
    * Override with PUBLIC_CONTACT_ENDPOINT (e.g. a Formspree or Netlify Forms URL).
    */
   contactEndpoint:

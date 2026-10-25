@@ -1,15 +1,29 @@
 ---
 import { site } from '../data/site';
+const w3f = Boolean(site.web3formsKey);
+const endpoint = w3f ? 'https://api.web3forms.com/submit' : site.contactEndpoint;
+const action = w3f ? endpoint : site.contactEndpoint.replace('/ajax/', '/');
+const service = w3f ? 'Web3Forms' : 'FormSubmit';
 ---
 
 <div class="contact">
-  <form class="cform" id="contact-form" action={site.contactEndpoint.replace('/ajax/', '/')} method="POST" data-endpoint={site.contactEndpoint}>
-    <input type="hidden" name="_subject" value="Portfolio inquiry" />
-    <input type="hidden" name="_captcha" value="false" />
-    <input type="hidden" name="_template" value="table" />
+  <form class="cform" id="contact-form" action={action} method="POST" data-endpoint={endpoint} data-service={w3f ? 'web3forms' : 'formsubmit'}>
+    {w3f ? (
+      <>
+        <input type="hidden" name="access_key" value={site.web3formsKey} />
+        <input type="hidden" name="subject" value="Portfolio inquiry" />
+        <input type="hidden" name="from_name" value="Portfolio contact form" />
+      </>
+    ) : (
+      <>
+        <input type="hidden" name="_subject" value="Portfolio inquiry" />
+        <input type="hidden" name="_captcha" value="false" />
+        <input type="hidden" name="_template" value="table" />
+      </>
+    )}
     <div class="cform__trap" aria-hidden="true">
       <label for="cf-website">Leave this field empty</label>
-      <input id="cf-website" name="_honey" type="text" tabindex="-1" autocomplete="off" />
+      <input id="cf-website" name={w3f ? 'botcheck' : '_honey'} type="text" tabindex="-1" autocomplete="off" />
     </div>
 
     <div class="cform__row">
@@ -47,7 +61,7 @@ import { site } from '../data/site';
     </div>
 
     <div class="cform__foot">
-      <p class="mono mute cform__note">* Required. Messages are delivered to {site.email} through FormSubmit.</p>
+      <p class="mono mute cform__note">* Required. Messages are delivered to {site.email} through {service}.</p>
       <button class="btn btn--solid" type="submit"><span class="cform__label">Send message</span> <span class="arrow" aria-hidden="true">→</span></button>
     </div>
     <p class="cform__status" id="cf-status" role="status" aria-live="polite" tabindex="-1"></p>
@@ -98,8 +112,9 @@ import { site } from '../data/site';
       const firstInvalid = validate(form);
       if (firstInvalid) { firstInvalid.focus(); return; }
       const data = new FormData(form);
-      if (String(data.get('_honey') || '').trim()) return;
-      data.set('_subject', `Portfolio inquiry: ${data.get('topic') || 'General'}`);
+      if (String(data.get('_honey') || data.get('botcheck') || '').trim()) return;
+      const subjectField = form.dataset.service === 'web3forms' ? 'subject' : '_subject';
+      data.set(subjectField, `Portfolio inquiry: ${data.get('topic') || 'General'}`);
 
       const btn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
       const label = btn.querySelector('.cform__label')!;
