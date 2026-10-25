@@ -1,0 +1,98 @@
+---
+/**
+ * Orion flow fields re-rendered from the Fluent exports (scripts/orion-recolor.py):
+ * Mach 2 and Mach 6 on one physical scale and one colour scale (M / M∞), compared with a
+ * slider, and the Mach 6 temperature field. The overlay draws the report's traced bow-shock
+ * positions, the symmetry axis and a 2 m scale bar in physical coordinates.
+ */
+import { Image } from 'astro:assets';
+import CompareSlider from './CompareSlider.astro';
+import fields from '../data/orion-fields.json';
+import { shockPoints } from '../data/orion';
+import m2 from '../assets/img/orion-field-m2.png';
+import m6 from '../assets/img/orion-field-m6.png';
+import t6 from '../assets/img/orion-field-t6.png';
+
+const w = fields.window;
+const vb = `${w.x0} ${-w.y1} ${(w.x1 - w.x0).toFixed(2)} ${(w.y1 - w.y0).toFixed(2)}`;
+const mirror = (pts: [number, number][]) => [...pts, ...pts.filter(([, y]) => y > 0).map(([x, y]) => [x, -y] as [number, number])];
+const machGrad = `linear-gradient(90deg, ${fields.mach.gradient.join(', ')})`;
+const tempGrad = `linear-gradient(90deg, ${fields.temperature.gradient.join(', ')})`;
+const sbX = w.x0 + 0.5, sbY = w.y1 - 0.7;
+---
+
+<div class="of">
+  <div class="of__row">
+  <CompareSlider
+    id="orion-mach"
+    before={{ src: m2, alt: 'Mach-number field around the capsule at Mach 2, shown as Mach number over freestream Mach number; the bow shock stands well ahead of the heat shield and the flow accelerates above freestream around the shoulder', label: 'Mach 2' }}
+    after={{ src: m6, alt: 'Mach-number field at Mach 6 on the same scale; the bow shock wraps closer to the heat shield and the flow stays below freestream Mach number behind it', label: 'Mach 6' }}
+  >
+    <svg slot="overlay" viewBox={vb} preserveAspectRatio="none">
+      <line x1={w.x0} y1="0" x2={w.x1} y2="0" class="of__axis" />
+      {mirror(shockPoints.mach2).map(([x, y]) => <circle cx={x} cy={-y} r="0.13" class="of__p2" />)}
+      {mirror(shockPoints.mach6).map(([x, y]) => <circle cx={x} cy={-y} r="0.13" class="of__p6" />)}
+      <g class="of__scale"><line x1={sbX} y1={sbY} x2={sbX + 2} y2={sbY} /><line x1={sbX} y1={sbY - 0.12} x2={sbX} y2={sbY + 0.12} /><line x1={sbX + 2} y1={sbY - 0.12} x2={sbX + 2} y2={sbY + 0.12} /></g>
+    </svg>
+  </CompareSlider>
+  <div class="of__side">
+  <div class="of__legend">
+    <p class="label mute">Mach number over freestream, M / M<sub>∞</sub></p>
+    <div class="of__bar" style={`background:${machGrad}`}></div>
+    <div class="of__ticks mono"><span style="left:0%">0</span><span style="left:35.7%">0.5</span><span style="left:71.4%">1.0 freestream</span><span style="left:100%">1.4</span></div>
+    <p class="of__key mono"><span><i class="of__k2"></i>Mach 2 shock, report data</span><span><i class="of__k6"></i>Mach 6 shock, report data</span><span><i class="of__ks"></i>2 m</span></p>
+  </div>
+  <p class="of__cap">Drag the divider. Both cases share one physical scale and one colour scale, so the shock stand-off can be compared directly: about 1.75 m ahead of the nose at Mach 2 against 1.25 m at Mach 6 on the axis. Amber marks flow accelerated above freestream Mach number around the shoulder at Mach 2.</p>
+  <p class="of__cap">The dots are the shock positions the report traced separately from Mach-number line plots. They agree with the shock in the recovered fields to within 0.05 m on the axis and 0.25 m at the outermost line, where the Mach 2 shock is weakest.</p>
+  </div>
+  </div>
+
+  <figure class="of__temp">
+    <div class="of__frame">
+      <Image src={t6} alt="Static temperature around the capsule at Mach 6: a hot shock layer in front of the heat shield, cooling through the expansion at the shoulder" widths={[600, 1000]} sizes="(min-width: 1100px) 520px, 100vw" loading="lazy" />
+      <svg viewBox={vb} preserveAspectRatio="none" aria-hidden="true">
+        <line x1={w.x0} y1="0" x2={w.x1} y2="0" class="of__axis" />
+        <g class="of__scale"><line x1={sbX} y1={sbY} x2={sbX + 2} y2={sbY} /><line x1={sbX} y1={sbY - 0.12} x2={sbX} y2={sbY + 0.12} /><line x1={sbX + 2} y1={sbY - 0.12} x2={sbX + 2} y2={sbY + 0.12} /></g>
+      </svg>
+    </div>
+    <figcaption>
+      <p class="label mute">Mach 6 · static temperature, K</p>
+      <div class="of__bar" style={`background:${tempGrad}`}></div>
+      <div class="of__ticks mono"><span style="left:1.1%">219</span><span style="left:45.7%">1,000</span><span style="left:99%">1,932</span></div>
+      <p class="of__cap">Temperature rises through the bow shock, falls through the expansion around the shoulder and rises again in the wake. The peak of about 1,930 K sits just ahead of the heat shield. It is a flow-temperature visualization, not a heat-shield prediction: there is no surface heating or chemistry model.</p>
+    </figcaption>
+  </figure>
+  <p class="of__src mono">Re-rendered from the ANSYS Fluent contour exports: each scalar was recovered by inverting its legend colormap (about 2–3 RGB units mean error), then redrawn on a common 90 px/m scale. Capsule from the same exports, 3.25 m long and 4.9 m across; the report gives L = 3.302 m. Method: scripts/orion-recolor.py.</p>
+</div>
+
+<style>
+  .of { display: grid; gap: 1.25rem; }
+  .of__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.25rem, 3vw, 2.5rem); align-items: start; }
+  .of__side { display: grid; gap: 1rem; }
+  @media (max-width: 860px) { .of__row { grid-template-columns: minmax(0, 1fr); } }
+  .of :global(.cmp__stage) { background: var(--tunnel); }
+  .of__axis { stroke: rgb(255 255 255 / 0.45); stroke-width: 0.025; stroke-dasharray: 0.15 0.12; }
+  .of__p2, .of__p6 { stroke-width: 0.05; vector-effect: non-scaling-stroke; }
+  .of__p2 { fill: #fff; stroke: #101315; }
+  .of__p6 { fill: #f2a53a; stroke: #101315; }
+  .of__scale line { stroke: #fff; stroke-width: 0.06; }
+  .of__legend { display: grid; gap: 0.45rem; max-width: 560px; }
+  .of__bar { height: 10px; border: 1px solid var(--ink); }
+  .of__ticks { position: relative; height: 1.1rem; font-size: 0.68rem; color: var(--mute); }
+  .of__ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+  .of__ticks span:first-child { transform: none; }
+  .of__ticks span:last-child { transform: translateX(-100%); }
+  .of__key { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.72rem; color: var(--mute); }
+  .of__key i { display: inline-block; width: 10px; height: 10px; margin-right: 0.4rem; border-radius: 50%; border: 1px solid #101315; vertical-align: -1px; }
+  .of__k2 { background: #fff; }
+  .of__k6 { background: #f2a53a; }
+  .of__ks { width: 22px !important; height: 2px !important; border-radius: 0 !important; border: 0 !important; background: var(--ink); vertical-align: 3px !important; }
+  .of__cap { font-size: 0.92rem; color: var(--ink-2); max-width: 75ch; }
+  .of__temp { margin: 1rem 0 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(1.25rem, 3vw, 2.5rem); align-items: start; }
+  @media (max-width: 860px) { .of__temp { grid-template-columns: minmax(0, 1fr); } }
+  .of__frame { position: relative; border: 1px solid var(--ink); background: var(--tunnel); }
+  .of__frame :global(img) { display: block; width: 100%; height: auto; }
+  .of__frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .of__temp figcaption { display: grid; gap: 0.45rem; }
+  .of__src { font-size: 0.7rem; color: var(--mute); max-width: 90ch; }
+</style>

@@ -1,33 +1,40 @@
-[2026-10-25T03:13:51.660Z] OK   phone   /                              status=200 load=130ms overflow=0 hero=true axe=0
-[2026-10-25T03:13:56.414Z] OK   phone   /work/branching-cold-plate/    status=200 load=113ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:02.034Z] OK   phone   /work/f1-tyre-road/            status=200 load=138ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:05.991Z] OK   phone   /work/orion-capsule/           status=200 load=118ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:09.209Z] OK   phone   /research/                     status=200 load=95ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:11.306Z] OK   phone   /does-not-exist/               status=404 load=34ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:14.805Z] OK   tablet  /                              status=200 load=132ms overflow=0 hero=true axe=0
-[2026-10-25T03:14:18.272Z] OK   tablet  /work/branching-cold-plate/    status=200 load=112ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:22.083Z] OK   tablet  /work/f1-tyre-road/            status=200 load=127ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:25.091Z] OK   tablet  /work/orion-capsule/           status=200 load=123ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:27.523Z] OK   tablet  /research/                     status=200 load=118ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:29.083Z] OK   tablet  /does-not-exist/               status=404 load=26ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:34.065Z] OK   laptop  /                              status=200 load=122ms overflow=0 hero=true axe=0
-[2026-10-25T03:14:38.581Z] OK   laptop  /work/branching-cold-plate/    status=200 load=132ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:44.068Z] OK   laptop  /work/f1-tyre-road/            status=200 load=145ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:48.400Z] OK   laptop  /work/orion-capsule/           status=200 load=117ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:51.689Z] OK   laptop  /research/                     status=200 load=80ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:53.856Z] OK   laptop  /does-not-exist/               status=404 load=46ms overflow=0 hero=false axe=0
-[2026-10-25T03:14:57.545Z] OK   desktop /                              status=200 load=113ms overflow=0 hero=true axe=0
-[2026-10-25T03:15:00.827Z] OK   desktop /work/branching-cold-plate/    status=200 load=118ms overflow=0 hero=false axe=0
-[2026-10-25T03:15:04.418Z] OK   desktop /work/f1-tyre-road/            status=200 load=133ms overflow=0 hero=false axe=0
-[2026-10-25T03:15:07.531Z] OK   desktop /work/orion-capsule/           status=200 load=129ms overflow=0 hero=false axe=0
-[2026-10-25T03:15:09.988Z] OK   desktop /research/                     status=200 load=74ms overflow=0 hero=false axe=0
-[2026-10-25T03:15:11.608Z] OK   desktop /does-not-exist/               status=404 load=42ms overflow=0 hero=false axe=0
-[2026-10-25T03:15:11.683Z] Checked 13 internal links
-[2026-10-25T03:15:12.069Z] OK   state switch shows 1 panel(s) for "rot"
-[2026-10-25T03:15:12.137Z] OK   compare slider responds to keyboard (--pos 60%)
-[2026-10-25T03:15:12.298Z] OK   pitot check computes Cp,max(2) = 1.657
-[2026-10-25T03:15:12.480Z] OK   caster map highlights 2 zone(s)
-[2026-10-25T03:15:15.844Z] OK   hero probe reports Cp = 0.049
-[2026-10-25T03:15:16.139Z] OK   contact form validation focuses the first invalid field
-[2026-10-25T03:15:17.790Z] OK   reduced-motion render without errors
-[2026-10-25T03:15:17.927Z] DONE, all checks passed
+[2026-10-25T04:18:01.323Z] OK   phone   /                              status=200 load=122ms overflow=0 hero=true axe=0
+[2026-10-25T04:18:06.205Z] OK   phone   /work/branching-cold-plate/    status=200 load=131ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:09.992Z] OK   phone   /work/branching-cold-plate/explorer/ status=200 load=158ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:16.236Z] OK   phone   /work/f1-tyre-road/            status=200 load=129ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:20.666Z] OK   phone   /work/orion-capsule/           status=200 load=115ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:23.905Z] OK   phone   /research/                     status=200 load=79ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:26.091Z] OK   phone   /does-not-exist/               status=404 load=29ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:29.961Z] OK   tablet  /                              status=200 load=115ms overflow=0 hero=true axe=0
+[2026-10-25T04:18:33.175Z] OK   tablet  /work/branching-cold-plate/    status=200 load=127ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:35.757Z] OK   tablet  /work/branching-cold-plate/explorer/ status=200 load=136ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:40.129Z] OK   tablet  /work/f1-tyre-road/            status=200 load=123ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:43.908Z] OK   tablet  /work/orion-capsule/           status=200 load=157ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:46.297Z] OK   tablet  /research/                     status=200 load=79ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:47.884Z] OK   tablet  /does-not-exist/               status=404 load=34ms overflow=0 hero=false axe=0
+[2026-10-25T04:18:53.064Z] OK   laptop  /                              status=200 load=118ms overflow=0 hero=true axe=0
+[2026-10-25T04:18:57.772Z] OK   laptop  /work/branching-cold-plate/    status=200 load=135ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:01.490Z] OK   laptop  /work/branching-cold-plate/explorer/ status=200 load=131ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:07.555Z] OK   laptop  /work/f1-tyre-road/            status=200 load=171ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:11.725Z] OK   laptop  /work/orion-capsule/           status=200 load=105ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:14.951Z] OK   laptop  /research/                     status=200 load=70ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:17.143Z] OK   laptop  /does-not-exist/               status=404 load=42ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:21.075Z] OK   desktop /                              status=200 load=124ms overflow=0 hero=true axe=0
+[2026-10-25T04:19:24.045Z] OK   desktop /work/branching-cold-plate/    status=200 load=123ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:26.701Z] OK   desktop /work/branching-cold-plate/explorer/ status=200 load=139ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:30.736Z] OK   desktop /work/f1-tyre-road/            status=200 load=126ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:34.030Z] OK   desktop /work/orion-capsule/           status=200 load=104ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:36.512Z] OK   desktop /research/                     status=200 load=85ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:38.148Z] OK   desktop /does-not-exist/               status=404 load=50ms overflow=0 hero=false axe=0
+[2026-10-25T04:19:38.211Z] Checked 12 internal links
+[2026-10-25T04:19:38.490Z] OK   state switch shows 1 panel(s) for "rot"
+[2026-10-25T04:19:38.551Z] OK   compare slider responds to keyboard (--pos 60%)
+[2026-10-25T04:19:38.740Z] OK   explorer reproduces the 1-D design point (99 / 514 Pa)
+[2026-10-25T04:19:38.789Z] OK   explorer slider updates readouts (1,100 W, 5 ladder rows)
+[2026-10-25T04:19:38.802Z] OK   explorer canvas drawn
+[2026-10-25T04:19:38.979Z] OK   pitot check computes Cp,max(2) = 1.657
+[2026-10-25T04:19:39.110Z] OK   caster map highlights 2 zone(s)
+[2026-10-25T04:19:42.459Z] OK   hero probe reports Cp = 0.049
+[2026-10-25T04:19:42.730Z] OK   contact form validation focuses the first invalid field
+[2026-10-25T04:19:44.376Z] OK   reduced-motion render without errors
+[2026-10-25T04:19:44.514Z] DONE, all checks passed

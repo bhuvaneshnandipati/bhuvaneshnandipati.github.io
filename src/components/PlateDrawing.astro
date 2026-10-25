@@ -1,0 +1,87 @@
+---
+/**
+ * Plan view of a cold plate drawn at build time from the generator geometry (mm).
+ * Copper is the plate, blue the coolant passages; the dashed square is the 40 × 40 mm die.
+ * Includes a 10 mm scale bar and the port markers.
+ */
+import { GEOM } from '../data/coldplate-geom';
+
+interface Props { kind: 'tree' | 'parallel'; label?: string; class?: string }
+const { kind, label, class: cls } = Astro.props;
+const g = GEOM.geo;
+const S = 10; // svg units per mm
+const half = (g.plate / 2) * S;
+const pad = 6 * S;
+const vb = `${-half - pad} ${-half - pad} ${g.plate * S + 2 * pad} ${g.plate * S + 2 * pad + 4 * S}`;
+const X = (x: number) => +(x * S).toFixed(1);
+const Y = (y: number) => +(-y * S).toFixed(1);
+const ringMid = g.r_rim + g.ring_w / 2;
+
+let channels = '';
+if (kind === 'tree') {
+  // group by width so each generation is one path
+  const byW = new Map<number, string[]>();
+  for (const [x1, y1, x2, y2, w] of GEOM.tree) {
+    const k = +w.toFixed(4);
+    if (!byW.has(k)) byW.set(k, []);
+    byW.get(k)!.push(`M${X(x1)} ${Y(y1)}L${X(x2)} ${Y(y2)}`);
+  }
+  channels = [...byW.entries()].map(([w, d]) => `<path d="${d.join('')}" stroke-width="${(w * S).toFixed(1)}"/>`).join('');
+} else {
+  const b = GEOM.base;
+  const rows: string[] = [];
+  for (let k = 0; k < b.n; k++) {
+    const yc = -b.span / 2 + b.pitch_mm * (k + 0.5);
+    rows.push(`<rect x="${X(-b.span / 2)}" y="${Y(yc + b.w_mm / 2)}" width="${(b.span * S).toFixed(1)}" height="${(b.w_mm * S).toFixed(2)}"/>`);
+  }
+  for (const sg of [-1, 1]) rows.push(`<rect x="${X(sg * g.x_man - g.man_w / 2)}" y="${Y(b.span / 2)}" width="${(g.man_w * S).toFixed(1)}" height="${(b.span * S).toFixed(1)}"/>`);
+  channels = rows.join('');
+}
+const outlets = [0, 1, 2, 3].map((k) => { const a = Math.PI / 4 + (k * Math.PI) / 2; return [ringMid * Math.cos(a), ringMid * Math.sin(a)]; });
+const aria = kind === 'tree'
+  ? 'Plan view of the leaf-vein cold plate: four trunks from a central inlet branch over six generations into 128 channels that end in a collector ring with four outlets.'
+  : 'Plan view of the parallel cold plate: 30 straight channels between an inlet manifold on the left and an outlet manifold on the right.';
+---
+
+<figure class:list={['plate', cls]}>
+  <svg viewBox={vb} role="img" aria-label={aria}>
+    <rect x={-half} y={-half} width={g.plate * S} height={g.plate * S} class="plate__cu" />
+    {kind === 'tree' ? (
+      <>
+        <g class="plate__water" fill="none" stroke-linecap="round" set:html={channels} />
+        <circle cx="0" cy="0" r={g.r_hub * S} class="plate__waterfill" />
+        <circle cx="0" cy="0" r={ringMid * S} fill="none" stroke-width={g.ring_w * S} class="plate__waterline" />
+        <circle cx="0" cy="0" r={(g.d_in / 2) * S} class="plate__port plate__port--in" />
+        {outlets.map(([x, y]) => <circle cx={X(x)} cy={Y(y)} r={(g.d_out / 2) * S} class="plate__port" />)}
+      </>
+    ) : (
+      <>
+        <g class="plate__waterfill" set:html={channels} />
+        <circle cx={X(-g.x_man)} cy="0" r={(g.d_out / 2) * S} class="plate__port plate__port--in" />
+        <circle cx={X(g.x_man)} cy="0" r={(g.d_out / 2) * S} class="plate__port" />
+      </>
+    )}
+    <rect x={-20 * S} y={-20 * S} width={40 * S} height={40 * S} class="plate__die" />
+    <g class="plate__scale" transform={`translate(${-half} ${half + 2.4 * S})`}>
+      <line x1="0" y1="0" x2={10 * S} y2="0" /><line x1="0" y1="-12" x2="0" y2="12" /><line x1={10 * S} y1="-12" x2={10 * S} y2="12" />
+      <text x={10 * S + 16} y="12">10 mm</text>
+    </g>
+    <text x={half} y={half + 3.3 * S} text-anchor="end" class="plate__dim">60 × 60 mm, C110 copper</text>
+  </svg>
+  {label && <figcaption class="plate__cap">{label}</figcaption>}
+</figure>
+
+<style>
+  .plate { margin: 0; min-width: 0; }
+  .plate svg { display: block; width: 100%; height: auto; }
+  .plate__cu { fill: #b5652e; stroke: #8a4718; stroke-width: 3; }
+  .plate__water :global(path) { stroke: #1f6fb2; }
+  .plate__waterfill, .plate__waterfill :global(rect) { fill: #1f6fb2; }
+  .plate__waterline { stroke: #1f6fb2; }
+  .plate__port { fill: #dfe6ea; stroke: #1f6fb2; stroke-width: 4; }
+  .plate__port--in { fill: #fff; }
+  .plate__die { fill: none; stroke: rgb(255 255 255 / 0.9); stroke-width: 4; stroke-dasharray: 14 10; }
+  .plate__scale line { stroke: var(--ink); stroke-width: 3; }
+  .plate__scale text, .plate__dim { font-family: var(--font-mono); font-size: 26px; fill: var(--mute); }
+  .plate__cap { margin-top: 0.5rem; font-size: 0.9rem; color: var(--ink-2); }
+</style>

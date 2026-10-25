@@ -1,20 +1,15 @@
 ---
-import Base from '../../layouts/Base.astro';
-import CaseHeader from '../../components/CaseHeader.astro';
-import ChapterRail from '../../components/ChapterRail.astro';
-import Chapter from '../../components/Chapter.astro';
-import SpecSheet from '../../components/SpecSheet.astro';
-import StateSwitch from '../../components/StateSwitch.astro';
-import Figure from '../../components/Figure.astro';
-import CaseFooter from '../../components/CaseFooter.astro';
-import { Image } from 'astro:assets';
-import { projectBySlug } from '../../data/projects';
-import { design, plates, solver, gates, results, extraResults, claims, limits, next } from '../../data/coldplate';
-import { fmt } from '../../lib/scale';
-import treeImg from '../../assets/img/cp-plate-tree.png';
-import parallelImg from '../../assets/img/cp-plate-parallel.png';
-import resultsImg from '../../assets/img/coldplate-results.png';
-import coverImg from '../../assets/img/coldplate-cover.png';
+import Base from '../../../layouts/Base.astro';
+import CaseHeader from '../../../components/CaseHeader.astro';
+import ChapterRail from '../../../components/ChapterRail.astro';
+import Chapter from '../../../components/Chapter.astro';
+import SpecSheet from '../../../components/SpecSheet.astro';
+import StateSwitch from '../../../components/StateSwitch.astro';
+import PlateDrawing from '../../../components/PlateDrawing.astro';
+import CaseFooter from '../../../components/CaseFooter.astro';
+import { projectBySlug } from '../../../data/projects';
+import { design, plates, solver, gates, results, extraResults, claims, limits, next } from '../../../data/coldplate';
+import { fmt } from '../../../lib/scale';
 
 const p = projectBySlug('branching-cold-plate');
 const INLET = 40;
@@ -59,9 +54,9 @@ const ld = [{
     <StateSwitch label="Plate" options={[{ id: 'tree', label: 'Leaf-vein tree' }, { id: 'parallel', label: 'Parallel channels' }]}>
       <div class="plates">
         <div class="plates__img">
-          <div data-when="tree"><Image src={treeImg} alt="Leaf-vein cold plate geometry: a channel tree branching from a central inlet to four outlets on a ring, over a 60 mm copper plate" widths={[420, 720]} sizes="(min-width: 900px) 520px, 100vw" loading="lazy" /></div>
-          <div data-when="parallel"><Image src={parallelImg} alt="Parallel cold plate geometry: 30 straight channels fed by manifolds at each end of a 60 mm copper plate" widths={[420, 720]} sizes="(min-width: 900px) 520px, 100vw" loading="lazy" /></div>
-          <p class="mono mute plates__src">Geometry from the project presentation.</p>
+          <div data-when="tree"><PlateDrawing kind="tree" /></div>
+          <div data-when="parallel"><PlateDrawing kind="parallel" /></div>
+          <p class="mono mute plates__src">Drawn to scale from the generator geometry: every channel at its true width.</p>
         </div>
         <div class="plates__spec">
           {(['tree', 'parallel'] as const).map((k) => (
@@ -78,6 +73,7 @@ const ld = [{
             </div>
           ))}
           <p class="plates__note">A 1-D network model screened both layouts first: <strong>99 Pa</strong> for the tree against <strong>514 Pa</strong> for the parallel plate. The CFD then had to confirm or overturn claims written down before the run (chapter 05).</p>
+          <a class="btn plates__cta" href="/work/branching-cold-plate/explorer/">Run both plates in the explorer <span class="arrow" aria-hidden="true">→</span></a>
         </div>
       </div>
     </StateSwitch>
@@ -136,7 +132,12 @@ const ld = [{
         </tbody>
       </table>
       </div>
-      <Figure src={resultsImg} alt="Original coarse-grid results slide listing case temperatures, pressure drops, entropy generation and balance checks" caption="The original results slide. Channel pressure drop is distinct from port-to-port pressure drop." source="Project presentation, October 2026" />
+      <a class="explore" href="/work/branching-cold-plate/explorer/">
+        <span class="label">Interactive explainer</span>
+        <span class="explore__t">Change the heat load, flow and inlet temperature, and watch the screening model respond.</span>
+        <span class="explore__s mono">Animated coolant at true relative speeds · pressure drop by generation · temperature ladder · entropy split · data-center levers</span>
+        <span class="explore__go mono">Open the explorer <span aria-hidden="true">→</span></span>
+      </a>
     </div>
   </Chapter>
 
@@ -158,7 +159,10 @@ const ld = [{
       <blockquote class="pull">
         <p>The tree’s advantage survives the jump from a 1-D estimate to a conjugate 3-D solution, but at half the predicted size. The losses the simple model leaves out, at junctions and plenums, are exactly where branching layouts pay.</p>
       </blockquote>
-      <Figure src={coverImg} alt="Leaf-vein and straight-channel plates side by side with peak case temperatures of 66.1 and 73.2 °C" caption="Summary slide from the series." source="Project presentation, October 2026" sizes="(min-width: 900px) 420px, 100vw" />
+      <div class="peaks">
+        <figure><PlateDrawing kind="tree" /><figcaption><span class="label mute">Leaf-vein tree</span><span class="peaks__v num">66.1 °C</span><span class="mono mute">peak case · 696 Pa plenum Δp</span></figcaption></figure>
+        <figure><PlateDrawing kind="parallel" /><figcaption><span class="label mute">Parallel channels</span><span class="peaks__v num">73.2 °C</span><span class="mono mute">peak case · 1,630 Pa plenum Δp</span></figcaption></figure>
+      </div>
     </div>
   </Chapter>
 
@@ -173,10 +177,11 @@ const ld = [{
   .plates { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem); align-items: start; }
   @media (max-width: 860px) { .plates { grid-template-columns: minmax(0, 1fr); } }
   .plates__img { border: 1px solid var(--ink); background: #fff; padding: clamp(0.75rem, 2vw, 1.5rem); }
-  .plates__img :global(img) { width: 100%; height: auto; }
+  .plates__img :global(svg) { width: 100%; height: auto; }
   .plates__src { margin-top: 0.6rem; font-size: 0.7rem; }
   .plates__name { font-family: var(--font-display); font-weight: 700; font-stretch: 78%; font-size: var(--step-3); line-height: 1; margin-bottom: 1rem; }
   .plates__note { margin-top: 1.5rem; color: var(--ink-2); max-width: 52ch; }
+  .plates__cta { margin-top: 1.25rem; }
 
   .gates { border-top: 1px solid var(--ink); }
   .gates__row { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.5fr) minmax(0, 0.8fr) minmax(0, 0.8fr); gap: 0.75rem; padding: 0.75rem 0; border-bottom: 1px solid var(--hair); font-size: 0.9rem; align-items: baseline; }
@@ -249,7 +254,19 @@ const ld = [{
     .claims__c, .claims__row > span:last-child { grid-column: 1 / -1; }
   }
 
-  .insight-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+  .insight-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: center; }
+  .peaks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .peaks figure { margin: 0; display: grid; gap: 0.5rem; min-width: 0; }
+  .peaks figcaption { display: grid; gap: 0.15rem; }
+  .peaks__v { font-family: var(--font-display); font-weight: 700; font-stretch: 68%; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1; }
+  .peaks figcaption .mono { font-size: 0.7rem; }
+  .explore { display: grid; gap: 0.75rem; align-content: start; padding: clamp(1.25rem, 2.5vw, 2rem); background: var(--tunnel); color: var(--tunnel-ink); text-decoration: none; border: 1px solid var(--ink); transition: background 0.2s; }
+  .explore:hover { background: #18212a; }
+  .explore .label { color: var(--cobalt-on-dark); }
+  .explore__t { font-family: var(--font-display); font-weight: 650; font-stretch: 82%; font-size: var(--step-2); line-height: 1.15; }
+  .explore__s { font-size: 0.75rem; color: var(--tunnel-mute); line-height: 1.6; }
+  .explore__go { color: var(--cobalt-on-dark); font-size: 0.85rem; }
+  .explore:hover .explore__go { text-decoration: underline; text-underline-offset: 0.2em; }
   @media (max-width: 860px) { .insight-grid { grid-template-columns: minmax(0, 1fr); } }
   .pull { border-left: 3px solid var(--cobalt); padding-left: clamp(1rem, 2.5vw, 2rem); }
   .pull p { font-size: clamp(1.35rem, 1.1rem + 1vw, 2rem); line-height: 1.35; font-style: italic; }

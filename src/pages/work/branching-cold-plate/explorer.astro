@@ -1,0 +1,307 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PlateDrawing from '../../../components/PlateDrawing.astro';
+import { screening, parallelSpeed } from '../../../lib/coldplate-model';
+import { GEOM } from '../../../data/coldplate-geom';
+import { fmt } from '../../../lib/scale';
+
+const M = screening(700, 1.0, 40);
+const t = M.tree, b = M.base;
+const dpMax = Math.max(...t.gens.map((x) => x.dp));
+const description = 'Interactive explainer for the leaf-vein cold plate: animated coolant at true relative channel speeds, and a live 1-D screening model of pressure drop, temperature and entropy generation for any heat load, flow and inlet temperature.';
+const ld = [{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'Leaf-vein cold plate explorer', applicationCategory: 'EngineeringApplication', description, author: { '@type': 'Person', name: 'Sai Bhuvanesh Nandipati' } }];
+---
+
+<Base title="Cold-plate explorer" description={description} sheet={{ n: 2, label: 'Cold-plate explorer' }} jsonLd={ld}>
+  <coldplate-explorer class="cx">
+    <header class="wrap cx-hd">
+      <nav class="crumbs mono" aria-label="Breadcrumb">
+        <a href="/">Index</a><span aria-hidden="true">/</span><a href="/work/branching-cold-plate/">Cold plate</a><span aria-hidden="true">/</span><span aria-current="page">Explorer</span>
+      </nav>
+      <p class="label cx-hd__k"><span>01</span>Interactive explainer · 700 W accelerator package</p>
+      <h1 class="cx-hd__title">Same copper, same water, same wetted area.<br /><em>The tree pumps easier and runs 7 K cooler.</em></h1>
+      <p class="lede cx-hd__lede">A leaf-vein channel tree, laid out by a generalised Murray’s law, against 30 straight channels. Both plates hold <b>2,084 mm³ of water</b> and wet <b>8,561 mm² of copper</b>. The coarse-grid conjugate run says the cheaper flow path also runs cooler: <b>2.3× less pressure drop</b> across the channel network and a <b>7.1 K lower peak case temperature</b> at 700 W.</p>
+      <ul class="cx-status mono">
+        <li class="is-done">Geometry built and checked</li>
+        <li class="is-done">1-D screening model live below</li>
+        <li class="is-done">Conjugate CFD, coarse grid: 8/8 gates on both plates</li>
+        <li class="is-next">Next: grid study and turbulence check</li>
+      </ul>
+    </header>
+
+    <section class="wrap cx-plates" aria-label="The two plates, with animated coolant">
+      <figure class="cx-plate">
+        <div class="cx-plate__hd"><h2>Leaf-vein tree</h2><p class="cx-big num" id="dpTreeBig">{fmt(t.dp)}<small>Pa, 1-D</small></p></div>
+        <canvas id="cvTree" width="600" height="600" aria-label="Leaf-vein cold plate with coolant moving from the central inlet out to the collector ring"></canvas>
+        <PlateDrawing kind="tree" class="cx-fallback" />
+        <figcaption>4 → 128 channels over 6 generations, 3.42 mm down to 0.50 mm wide, 2.0 mm deep. Inlet at the hub, four outlets on the ring.</figcaption>
+      </figure>
+      <figure class="cx-plate">
+        <div class="cx-plate__hd"><h2>Parallel channels</h2><p class="cx-big num" id="dpBaseBig">{fmt(b.dp)}<small>Pa, 1-D</small></p></div>
+        <canvas id="cvBase" width="600" height="600" aria-label="Parallel cold plate with coolant moving from the left manifold to the right"></canvas>
+        <PlateDrawing kind="parallel" class="cx-fallback" />
+        <figcaption>30 channels, 0.643 mm wide, 2.0 mm deep, fed from end manifolds. Volume and wetted area matched to the tree within 0.03%.</figcaption>
+      </figure>
+      <p class="cx-legend mono">
+        <span><i style="background:#b5652e"></i>copper C110, 60 × 60 × 5 mm</span>
+        <span><i style="background:#1f6fb2"></i>coolant: dots move at the real relative speeds, slowed about 25×</span>
+        <span><i class="cx-legend__die"></i>40 × 40 mm die</span>
+        <span id="speedNote">terminal channel {fmt(t.gens[5].v, 2)} m/s · parallel channel {fmt(parallelSpeed(1), 2)} m/s</span>
+      </p>
+    </section>
+
+    <div class="cx-controls-wrap">
+      <div class="wrap cx-controls" role="group" aria-label="Operating point">
+        <div class="cx-ctl"><label for="q">Heat load <output id="qo">700 W</output></label><input id="q" type="range" min="200" max="1200" step="10" value="700" /></div>
+        <div class="cx-ctl"><label for="v">Water flow <output id="vo">1.00 L/min</output></label><input id="v" type="range" min="0.3" max="2" step="0.05" value="1" /></div>
+        <div class="cx-ctl"><label for="t">Inlet temperature <output id="to">40 °C</output></label><input id="t" type="range" min="20" max="45" step="1" value="40" /></div>
+        <button class="btn cx-reset" id="reset" type="button">Reset to design point</button>
+      </div>
+    </div>
+
+    <section class="wrap cx-blk" aria-labelledby="cx1">
+      <header class="cx-blk__hd"><span class="cx-n mono">01</span><h2 id="cx1">Pressure drop: the tree’s advantage</h2>
+        <p>Channel network only, with developing-flow friction (Muzychka–Yovanovich). This is the claim Murray’s law is built to win. The CFD measured 2.34× plenum to plenum, against the 5.18× screening ratio here: junction losses take part of the gain.</p></header>
+      <div class="cx-grid2">
+        <div class="cx-card">
+          <div class="cx-bar"><span>Tree</span><div class="cx-bar__track"><div class="cx-bar__fill cx-bar__fill--tree" id="bT" style={`width:${(100 * t.dp) / Math.max(t.dp, b.dp)}%`}></div></div><span class="mono" id="vT">{fmt(t.dp, 1)} Pa</span></div>
+          <div class="cx-bar"><span>Parallel</span><div class="cx-bar__track"><div class="cx-bar__fill cx-bar__fill--base" id="bB" style={`width:${(100 * b.dp) / Math.max(t.dp, b.dp)}%`}></div></div><span class="mono" id="vB">{fmt(b.dp, 1)} Pa</span></div>
+          <div class="cx-kpi">
+            <div><span class="k">Ratio, parallel ÷ tree</span><span class="v" id="ratio">{fmt(b.dp / t.dp, 2)}<small>×</small></span></div>
+            <div><span class="k">Pumping power, tree</span><span class="v" id="wT">{fmt(t.s.W * 1000, 2)}<small>mW</small></span></div>
+            <div><span class="k">Pumping power, parallel</span><span class="v" id="wB">{fmt(b.s.W * 1000, 2)}<small>mW</small></span></div>
+          </div>
+        </div>
+        <div class="cx-card">
+          <h3>Where the tree’s pressure goes, by generation</h3>
+          <div class="cx-tbl" tabindex="0" role="region" aria-label="Per-generation hydraulics table">
+            <table id="genTbl">
+              <thead><tr><th>Gen</th><th>Channels</th><th>Width</th><th>Velocity</th><th>Re</th><th class="l">Δp</th></tr></thead>
+              <tbody>
+                {t.gens.map((x, i) => <tr><td>{x.gen}</td><td>{x.n}</td><td>{fmt(GEOM.rows[i].w_mm, 2)} mm</td><td>{fmt(x.v, 2)} m/s</td><td>{fmt(x.Re)}</td><td class="l"><span class="genbar" style={`width:${Math.round((36 * x.dp) / dpMax)}px`}></span>{fmt(x.dp, 1)} Pa</td></tr>)}
+              </tbody>
+            </table>
+          </div>
+          <p class="cx-note">The thin terminal channels carry most of the drop. Five of six generations never reach fully developed flow, so the textbook Poiseuille estimate understates the tree’s Δp by about 1.3×.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap cx-blk" aria-labelledby="cx2">
+      <header class="cx-blk__hd"><span class="cx-n mono">02</span><h2 id="cx2">Temperature: equal in 1-D, not in the CFD</h2>
+        <p>Matched wetted area means matched conductance in a 1-D model. Any temperature gap between the plates has to come from what the 1-D model leaves out. The CFD found one: 7.1 K at the peak.</p></header>
+      <div class="cx-grid2">
+        <div class="cx-card">
+          <h3>Case temperature, built up from the inlet</h3>
+          <div class="cx-ladder" id="ladder"></div>
+          <div class="cx-kpi">
+            <div><span class="k">Tree</span><span class="v" id="tcT">{fmt(t.th.Tcase, 1)}<small>°C</small></span></div>
+            <div><span class="k">Parallel</span><span class="v" id="tcB">{fmt(b.th.Tcase, 1)}<small>°C</small></span></div>
+            <div><span class="k">Difference</span><span class="v" id="tcD">{fmt(Math.abs(t.th.Tcase - b.th.Tcase), 3)}<small>K</small></span></div>
+          </div>
+        </div>
+        <div class="cx-card">
+          <h3>A ceiling, and the CFD landed below it</h3>
+          <p>The convection step uses Nu = 4.5, the fully developed value. Every channel here is thermally developing (thermal entrance lengths of 27–1,261 mm in channels 1.3–8.3 mm long), so real heat transfer is better. The CFD mean case temperature landed <b>below</b> this line on both plates: 63.9 °C for the tree and 66.1 °C for the parallel plate, against 72.4 °C here.</p>
+          <p>The CFD also adds three things the 1-D model can’t see: spreading in the copper, junction mixing, and uneven flow split between branches. Those are where the plates differ: the parallel plate’s hottest spot reaches 73.2 °C, the tree’s 66.1 °C.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap cx-blk" aria-labelledby="cx3">
+      <header class="cx-blk__hd"><span class="cx-n mono">03</span><h2 id="cx3">Where the loss goes</h2>
+        <p>Entropy generation splits into heat crossing a temperature difference (thermal) and friction (viscous). Murray’s law minimises only the second.</p></header>
+      <div class="cx-card cx-loss">
+        <div class="cx-kpi">
+          <div><span class="k">S<sub>gen</sub> thermal (both plates)</span><span class="v" id="sTh">{fmt(t.s.St * 1000, 1)}<small>mW/K</small></span></div>
+          <div><span class="k">S<sub>gen</sub> viscous, tree</span><span class="v" id="sVT">{fmt(t.s.Sv * 1e6, 1)}<small>µW/K</small></span></div>
+          <div><span class="k">S<sub>gen</sub> viscous, parallel</span><span class="v" id="sVB">{fmt(b.s.Sv * 1e6, 1)}<small>µW/K</small></span></div>
+          <div><span class="k">Bejan number, tree</span><span class="v" id="be">{t.s.Be.toFixed(5)}</span></div>
+        </div>
+        <div class="cx-strip" aria-hidden="true"><div class="cx-strip__th"></div><div class="cx-strip__vi"></div></div>
+        <p id="lossLine"></p>
+        <div class="cx-zoom">
+          <span class="cx-note" id="dotsLabel">Viscous share per 100,000 units of loss</span>
+          <div class="cx-dots" id="dots" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap cx-blk" id="datacenter" aria-labelledby="cx4">
+      <header class="cx-blk__hd"><span class="cx-n mono">04</span><h2 id="cx4">What this means for a data center</h2>
+        <p>One AI rack now holds 72 GPUs at 1,100 W each, and about 90% of that heat leaves through cold plates like these. Here is where a plate design shows up in a facility.</p></header>
+      <div class="cx-presets" role="group" aria-label="GPU presets">
+        <span class="cx-note">Load a preset:</span>
+        <button type="button" class="preset" data-q="700" data-v="1" data-t="40">H100-class · 700 W · 40 °C water</button>
+        <button type="button" class="preset" data-q="700" data-v="1" data-t="45">700 W · 45 °C water</button>
+        <button type="button" class="preset" data-q="1100" data-v="1.65" data-t="45">B300-class · 1,100 W · 45 °C water</button>
+      </div>
+      <div class="cx-grid3">
+        <div class="cx-card">
+          <span class="label mute">Lever 1 · the big one</span>
+          <h3>Thermal resistance sets how warm the water can be</h3>
+          <div class="cx-kpi">
+            <div><span class="k">Plate resistance, case to inlet</span><span class="v" id="dcR"></span></div>
+            <div><span class="k">Headroom per 0.01 K/W saved</span><span class="v" id="dcH"></span></div>
+          </div>
+          <p>Warm supply water (ASHRAE W40/W45) can be cooled by outside air instead of chillers. Every kelvin a plate saves between chip and water can go into warmer supply water: more chiller-free hours and hotter return water for heat reuse. Cooling takes about 7% of energy at efficient hyperscale sites and over 30% at less efficient enterprise sites.</p>
+          <p class="cx-note" id="dcRnote"></p>
+        </div>
+        <div class="cx-card">
+          <span class="label mute">Lever 2 · real, but small in energy</span>
+          <h3>Pressure drop sets the pump and the flow split</h3>
+          <div class="cx-kpi">
+            <div><span class="k">Rack flow (72 plates)</span><span class="v" id="dcF"></span></div>
+            <div><span class="k">Pump power, tree vs. parallel</span><span class="v" id="dcP"></span></div>
+          </div>
+          <p>For a whole rack, the pump energy the tree saves is a few watts against tens of kilowatts of heat. The value is in pressure budget: in one OCP prototype loop, cold plates were about half the loop’s pressure drop. A lower-Δp plate frees head for longer manifolds, more devices per loop, a more even flow split, or a smaller pump.</p>
+          <p class="cx-note">Channel network only; ports, hoses and quick disconnects add more. Pump efficiency assumed 50%.</p>
+        </div>
+        <div class="cx-card">
+          <span class="label mute">Lever 3 · second law</span>
+          <h3>What the plate destroys</h3>
+          <div class="cx-kpi">
+            <div><span class="k">Work potential destroyed, heat transfer</span><span class="v" id="dcXt"></span></div>
+            <div><span class="k">Destroyed by friction (tree)</span><span class="v" id="dcXv"></span></div>
+          </div>
+          <p>Exergy destroyed = T<sub>0</sub>·S<sub>gen</sub>, with T<sub>0</sub> = 25 °C. It measures how much the plate degrades the heat’s value for reuse. AI training loads also swing in power: the Milestone 5 screening puts the extra entropy cost of a pulsed load at up to 1.63× for a 30 s cycle at the same mean power, and the plate’s copper mass is what damps it.</p>
+        </div>
+      </div>
+      <div class="cx-card cx-bottom">
+        <p><b>Bottom line.</b> The 1-D model said the plates were identical on temperature. The coarse-grid CFD says the tree’s hottest spot sits 7.1 K closer to the inlet water (26.1 K above it against 33.2 K) at the same flow, volume and wetted area. In a facility, that is the number that pays: those kelvins can go into warmer supply water and more chiller-free hours. The pressure saving (2.3× at the plate, 4.6× port to port) mostly buys pressure budget, not energy. The grid study decides how much of the 7 K survives refinement.</p>
+      </div>
+      <details class="cx-src">
+        <summary>Sources for the facts in this section</summary>
+        <ul>
+          <li>IEA, <a class="link" href="https://www.iea.org/reports/energy-and-ai/energy-demand-from-ai" target="_blank" rel="noopener noreferrer">Energy and AI: energy demand from AI</a> (2025). Data centres used about 415 TWh in 2024 (about 1.5% of global electricity), with about 945 TWh projected for 2030. Cooling is about 7% of energy at efficient hyperscale sites and over 30% at less efficient enterprise sites.</li>
+          <li>Lenovo Press, <a class="link" href="https://lenovopress.lenovo.com/lp2357-lenovo-nvidia-gb300-nvl72-rack-scale-ai" target="_blank" rel="noopener noreferrer">GB300 NVL72 product guide</a>: 72 GPUs at 1,100 W TGP, 135 kW rack TDP, about 90% of heat to liquid, water inlet up to 45 °C.</li>
+          <li>NVIDIA, <a class="link" href="https://www.nvidia.com/en-us/data-center/h100/" target="_blank" rel="noopener noreferrer">H100 specifications</a>: SXM max TDP up to 700 W.</li>
+          <li>ASHRAE TC 9.9, <a class="link" href="https://www.ashrae.org/file%20library/technical%20resources/bookstore/emergence-and-expansion-of-liquid-cooling-in-mainstream-data-centers_wp.pdf" target="_blank" rel="noopener noreferrer">Emergence and Expansion of Liquid Cooling in Mainstream Data Centers</a> (2021): facility water classes W17–W+, and warm water that “minimizes (or eliminates) the need for chillers”.</li>
+          <li>Facilities Dive, <a class="link" href="https://www.facilitiesdive.com/news/no-chillers-needed-for-vera-rubin-server-racks-nvidia-ceo/809216/" target="_blank" rel="noopener noreferrer">No chillers needed for Vera Rubin server racks</a>: Jensen Huang at CES, 6 January 2026: “At 45 degrees Celsius, the data center doesn’t need a chiller.”</li>
+          <li>Open Compute Project, <a class="link" href="https://www.opencompute.org/documents/oai-system-liquid-cooling-guidelines-in-ocp-template-mar-3-2023-update-pdf" target="_blank" rel="noopener noreferrer">OAI System Liquid Cooling Guidelines</a>: 1.25–2.0 L/min per kW (1.5 typical, for a 10 °C rise). Cold plates were about 50% of loop Δp in a prototype, and cold plates can reach below 0.02 °C/W for OAM packages.</li>
+          <li>Derived numbers (resistance, headroom, rack pump power, exergy) come from this page’s screening model. This project’s design point is 1.43 L/min per kW with a 10.15 K rise, which matches the OCP design target.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="wrap cx-blk" aria-labelledby="cx5">
+      <header class="cx-blk__hd"><span class="cx-n mono">05</span><h2 id="cx5">What the CFD answered</h2>
+        <p>Claims stated before the run were answered by the coarse-grid conjugate run of 9 October 2026 in OpenFOAM v2512. The full results, the eight acceptance gates and the claim-by-claim verdicts are in the case study.</p></header>
+      <a class="btn btn--solid cx-back" href="/work/branching-cold-plate/#results">Open the CFD results <span class="arrow" aria-hidden="true">→</span></a>
+      <ul class="cx-notes">
+        <li>Sections 01–04 and the sliders use the Milestone 1 screening model (ported from <span class="mono">murray_schedule.py</span>). CFD figures quoted in the text come from the coarse-grid conjugate run, which is one grid level; the grid study tests them on finer meshes.</li>
+        <li>Assumptions: laminar flow (generation-1 Re <span class="mono" id="reG1">{fmt(t.gens[0].Re)}</span>, port Re <span class="mono" id="rePort"></span>; flow in the channels never fully develops), constant water properties at 45 °C, no contact resistance, Nu = 4.5.</li>
+        <li>Plates are drawn from the same signed-distance primitives that generate the meshed STL surfaces.</li>
+      </ul>
+    </section>
+  </coldplate-explorer>
+</Base>
+
+<script>
+  import '../../../scripts/coldplate-explorer';
+</script>
+
+<style>
+  .cx { display: block; padding-bottom: clamp(3rem, 6vw, 5rem); }
+  .crumbs { display: flex; gap: 0.6rem; color: var(--mute); font-size: 0.75rem; }
+  .crumbs a { text-decoration: none; }
+  .crumbs a:hover { color: var(--cobalt); text-decoration: underline; }
+  .cx-hd { padding-top: clamp(1.5rem, 3vw, 2.5rem); display: grid; gap: 1.1rem; }
+  .cx-hd__k { display: flex; gap: 0.9rem; color: var(--mute); margin-top: 1rem; }
+  .cx-hd__k span { color: var(--cobalt); }
+  .cx-hd__title { font-size: clamp(2.2rem, 1rem + 4.6vw, 4.8rem); font-weight: 700; font-stretch: 70%; line-height: 0.95; letter-spacing: -0.03em; max-width: 22ch; }
+  .cx-hd__title em { font-family: var(--font-text); font-style: italic; font-weight: 400; font-stretch: 100%; letter-spacing: -0.02em; color: var(--cobalt); }
+  .cx-hd__lede { max-width: 68ch; }
+  .cx-hd__lede b { font-weight: 650; }
+  .cx-status { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; font-size: 0.72rem; }
+  .cx-status li { padding: 0.3rem 0.6rem; border: 1px solid var(--rule); }
+  .cx-status li::before { content: '●'; margin-right: 0.45rem; }
+  .cx-status .is-done::before { color: var(--pass); }
+  .cx-status .is-next::before { color: #8a5a00; }
+
+  .cx-plates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 2.5vw, 2rem); margin-top: clamp(1.75rem, 3vw, 2.5rem); }
+  .cx-plate { margin: 0; display: grid; gap: 0.6rem; min-width: 0; border: 1px solid var(--ink); background: #fff; padding: clamp(0.75rem, 1.5vw, 1.1rem); }
+  .cx-plate__hd { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+  .cx-plate__hd h2 { font-size: 1.3rem; font-weight: 700; font-stretch: 82%; }
+  .cx-big { font-family: var(--font-display); font-weight: 700; font-stretch: 70%; font-size: clamp(1.8rem, 3.4vw, 2.6rem); line-height: 1; }
+  .cx-big :global(small) { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400; color: var(--mute); margin-left: 0.35rem; }
+  .cx-plate canvas { width: 100%; aspect-ratio: 1; display: none; }
+  .cx.is-ready .cx-plate canvas { display: block; }
+  .cx.is-ready .cx-plate :global(.cx-fallback) { display: none; }
+  .cx-plate figcaption { font-size: 0.85rem; color: var(--ink-2); }
+  .cx-legend { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; font-size: 0.72rem; color: var(--mute); }
+  .cx-legend i { display: inline-block; width: 12px; height: 12px; margin-right: 0.4rem; vertical-align: -2px; }
+  .cx-legend__die { border: 1.5px dashed var(--mute); }
+  @media (max-width: 640px) { .cx-plates { grid-template-columns: minmax(0, 1fr); } }
+
+  .cx-controls-wrap { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); z-index: 30; margin-top: 1.5rem; background: color-mix(in srgb, var(--paper) 94%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-block: 1px solid var(--rule); }
+  .cx-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 0.75rem 2rem; align-items: end; padding-block: 0.9rem; }
+  .cx-ctl { display: grid; gap: 0.3rem; min-width: 0; }
+  .cx-ctl label { display: flex; justify-content: space-between; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--mute); }
+  .cx-ctl output { color: var(--ink); font-weight: 600; text-transform: none; }
+  .cx-ctl input { width: 100%; accent-color: var(--cobalt); min-height: 32px; }
+  .cx-reset { min-height: 40px; padding: 0.5rem 0.9rem; }
+  @media (max-width: 820px) { .cx-controls-wrap { position: static; } .cx-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  @media (max-width: 520px) { .cx-controls { grid-template-columns: minmax(0, 1fr); } }
+
+  .cx-blk { display: grid; gap: 1.25rem; margin-top: clamp(3rem, 6vw, 4.5rem); }
+  .cx-blk__hd { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.4rem 1rem; align-items: baseline; border-top: 1px solid var(--ink); padding-top: 1.1rem; }
+  .cx-blk__hd h2 { font-size: var(--step-3); font-weight: 700; font-stretch: 76%; line-height: 1; letter-spacing: -0.02em; }
+  .cx-blk__hd p { grid-column: 2; color: var(--ink-2); max-width: 70ch; }
+  .cx-n { color: var(--cobalt); font-size: 0.8rem; }
+  .cx-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
+  .cx-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+  @media (max-width: 980px) { .cx-grid3 { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 820px) { .cx-grid2 { grid-template-columns: minmax(0, 1fr); } }
+  .cx-card { display: grid; gap: 0.9rem; align-content: start; min-width: 0; padding: clamp(1rem, 2vw, 1.4rem); border: 1px solid var(--rule); background: var(--paper); }
+  .cx-card h3 { font-size: 1.1rem; font-weight: 650; font-stretch: 86%; }
+  .cx-card p { font-size: 0.98rem; max-width: 66ch; }
+  .cx-note { font-size: 0.85rem; color: var(--mute); }
+
+  .cx-bar { display: grid; grid-template-columns: 5rem minmax(0, 1fr) 6rem; gap: 0.75rem; align-items: center; font-size: 0.9rem; }
+  .cx-bar .mono { text-align: right; font-size: 0.8rem; }
+  .cx-bar__track { height: 16px; background: var(--paper-2); }
+  .cx-bar__fill { height: 100%; transition: width 0.35s var(--ease-out); }
+  .cx-bar__fill--tree { background: #1f6fb2; }
+  .cx-bar__fill--base { background: #b5652e; }
+  .cx-kpi { display: flex; flex-wrap: wrap; gap: 0.75rem 1.75rem; }
+  .cx-kpi > div { display: grid; gap: 0.15rem; }
+  .cx-kpi .k { font-size: 0.78rem; color: var(--mute); }
+  .cx-kpi .v { font-family: var(--font-display); font-weight: 700; font-stretch: 74%; font-size: 1.6rem; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .cx-kpi .v :global(small) { font-family: var(--font-mono); font-weight: 400; font-size: 0.72rem; color: var(--mute); margin-left: 0.25rem; }
+
+  .cx-tbl { overflow-x: auto; }
+  .cx-tbl table { width: 100%; min-width: 460px; font-size: 0.82rem; font-variant-numeric: tabular-nums; }
+  .cx-tbl th, .cx-tbl td { padding: 0.45rem 0.5rem; text-align: right; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+  .cx-tbl th { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--mute); }
+  .cx-tbl th:first-child, .cx-tbl td:first-child, .cx-tbl .l { text-align: left; }
+  .cx-tbl :global(.genbar) { display: inline-block; height: 8px; margin-right: 0.4rem; background: #1f6fb2; vertical-align: middle; }
+
+  .cx-ladder { display: grid; gap: 0.4rem; }
+  .cx-ladder :global(.rung) { display: grid; grid-template-columns: 11rem minmax(0, 1fr) 4.5rem; gap: 0.6rem; align-items: center; font-size: 0.85rem; }
+  .cx-ladder :global(.rung__track) { position: relative; height: 14px; background: var(--paper-2); }
+  .cx-ladder :global(.rung__seg) { position: absolute; top: 0; height: 100%; background: #d9a06f; }
+  .cx-ladder :global(.rung__seg--water) { background: #1f6fb2; }
+  .cx-ladder :global(.rung--total .rung__seg) { background: var(--warm); }
+  .cx-ladder :global(.rung__v) { text-align: right; }
+  @media (max-width: 560px) { .cx-ladder :global(.rung) { grid-template-columns: 8rem minmax(0, 1fr) 4rem; } }
+
+  .cx-strip { display: flex; height: 40px; border: 1px solid var(--rule); }
+  .cx-strip__th { flex: 1; background: var(--warm); }
+  .cx-strip__vi { width: 3px; background: #1f6fb2; }
+  .cx-zoom { display: grid; gap: 0.5rem; }
+  .cx-dots { display: grid; grid-template-columns: repeat(50, 1fr); gap: 2px; max-width: 420px; }
+  .cx-dots :global(i) { aspect-ratio: 1; background: var(--paper-2); }
+  .cx-dots :global(i.on) { background: #1f6fb2; }
+
+  .cx-presets { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+  .preset { min-height: 40px; padding: 0.45rem 0.8rem; border: 1px solid var(--ink); background: transparent; font-family: var(--font-mono); font-size: 0.75rem; cursor: pointer; }
+  .preset:hover { background: var(--paper-2); }
+  .preset[aria-pressed='true'] { background: var(--ink); color: var(--paper); }
+  .cx-bottom { border-left: 3px solid var(--cobalt); }
+  .cx-bottom p { max-width: none; font-size: 1.02rem; }
+  .cx-src summary { cursor: pointer; font-family: var(--font-mono); font-size: 0.78rem; color: var(--mute); }
+  .cx-src ul { margin-top: 0.75rem; padding-left: 1.1rem; display: grid; gap: 0.5rem; font-size: 0.88rem; color: var(--ink-2); max-width: 90ch; }
+  .cx-back { justify-self: start; }
+  .cx-notes { padding-left: 1.1rem; display: grid; gap: 0.4rem; font-size: 0.88rem; color: var(--mute); max-width: 90ch; }
+</style>

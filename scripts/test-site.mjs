@@ -13,7 +13,7 @@ import { AxeBuilder } from '@axe-core/playwright';
 const ROOT = resolve('dist');
 const LOGS = resolve('logs');
 const SHOTS = join(LOGS, 'screens');
-const PAGES = ['/', '/work/branching-cold-plate/', '/work/f1-tyre-road/', '/work/orion-capsule/', '/research/', '/does-not-exist/'];
+const PAGES = ['/', '/work/branching-cold-plate/', '/work/branching-cold-plate/explorer/', '/work/f1-tyre-road/', '/work/orion-capsule/', '/research/', '/does-not-exist/'];
 const VIEWPORTS = [
   { name: 'phone', width: 390, height: 844 },
   { name: 'tablet', width: 820, height: 1180 },
@@ -126,6 +126,17 @@ log('Checked', internalLinks.size, 'internal links');
   for (let i = 0; i < 10; i++) await page.keyboard.press('ArrowRight');
   const pos = await page.evaluate(() => getComputedStyle(document.querySelector('compare-slider')).getPropertyValue('--pos'));
   if (pos.trim() !== '60%') fail(`compare slider keyboard: expected 60%, got ${pos}`); else log('OK   compare slider responds to keyboard (--pos 60%)');
+
+  await page.goto(base + '/work/branching-cold-plate/explorer/');
+  const dp0 = (await page.textContent('#dpTreeBig'))?.trim();
+  const dpB0 = (await page.textContent('#dpBaseBig'))?.trim();
+  if (!dp0?.startsWith('99') || !dpB0?.startsWith('514')) fail(`explorer design point: expected 99 / 514 Pa, got ${dp0} / ${dpB0}`); else log('OK   explorer reproduces the 1-D design point (99 / 514 Pa)');
+  await page.fill('#q', '1100'); await page.dispatchEvent('#q', 'input');
+  const q = (await page.textContent('#qo'))?.trim();
+  const ladder = await page.evaluate(() => document.querySelectorAll('#ladder .rung').length);
+  if (q !== '1,100 W' || ladder !== 5) fail(`explorer slider: got ${q}, ladder rows ${ladder}`); else log('OK   explorer slider updates readouts (1,100 W, 5 ladder rows)');
+  const drawn = await page.evaluate(() => { const c = document.querySelector('#cvTree'); const d = c.getContext('2d').getImageData(c.width / 2, c.height / 2, 1, 1).data; return d[3] > 0; });
+  if (!drawn) fail('explorer canvas not drawn'); else log('OK   explorer canvas drawn');
 
   await page.goto(base + '/work/orion-capsule/');
   await page.fill('#pc-mach', '2');

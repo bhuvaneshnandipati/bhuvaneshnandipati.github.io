@@ -24,6 +24,7 @@ npm run check      # TypeScript and Astro diagnostics
 |---|---|
 | `/` | Hero with the live flow field, project index, verification ledger, research teaser, about, contact form |
 | `/work/branching-cold-plate/` | Case study 01: conjugate heat transfer, leaf-vein vs. parallel cold plate |
+| `/work/branching-cold-plate/explorer/` | Interactive explainer: animated coolant and the live 1-D screening model (ported from the owner's claude.ai artifact) |
 | `/work/f1-tyre-road/` | Case study 02: near-wall mesh, contact patch, rotating wheels, grid convergence |
 | `/work/orion-capsule/` | Case study 03: Mach 2 / Mach 6 capsule, shock position, stagnation-pressure check |
 | `/research/` | Thesis, interactive caster map, publication list with author lists |
@@ -40,6 +41,8 @@ src/
     coldplate.ts   Cold-plate geometry, solver, 8 gates, results, claims, limits
     f1.ts          F1 setups, configurations, forces, speed sweep, grid study, checks
     orion.ts       Orion freestream, mesh, shock positions, Cp table
+    orion-fields.json  Window/scale/colour metadata written by scripts/orion-recolor.py
+    coldplate-geom.ts  Exact channel geometry from the generator (drives drawings, glyph and explorer)
     research.ts    Thesis record and papers (titles, venues, dates, authors, DOIs)
   pages/           One file per route (case studies compose components with data)
   components/      Reusable building blocks
@@ -67,6 +70,7 @@ public/
 scripts/
   test-site.mjs    Playwright + axe end-to-end checks; writes logs/
   og-image.mjs     Renders public/og.png from the built home page
+  orion-recolor.py Recovers the Orion Mach/temperature fields from the Fluent exports and re-renders them on one scale
 logs/              Test log, JSON report, screenshots, Lighthouse reports
 ```
 

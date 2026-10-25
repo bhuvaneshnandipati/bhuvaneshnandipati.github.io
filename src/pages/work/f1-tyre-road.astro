@@ -17,8 +17,7 @@ import { meshStudy, contactSetup, configs, regionDelta, wheelForces, speeds, ope
 import { coolwarm, blues, legendGradient } from '../../lib/colormap';
 import surfaceCp from '../../assets/img/f1-surface-cp.png';
 import underside from '../../assets/img/f1-underside-dcp.png';
-import gapA from '../../assets/img/f1-gapmesh-a.png';
-import gapB from '../../assets/img/f1-gapmesh-b.png';
+import MeshSchematic from '../../components/MeshSchematic.astro';
 import yA from '../../assets/img/f1-yplus-a.png';
 import yB from '../../assets/img/f1-yplus-b.png';
 import sideGap from '../../assets/img/f1-side-gap.png';
@@ -82,13 +81,18 @@ const ld = [{
     </div>
     <div class="split split--even">
       <Figure src={underside} alt="Underside view of the car coloured by the pressure-coefficient difference between the two meshes, concentrated on the rear tyres" caption="ΔC<sub>p</sub> = C<sub>p</sub>(A) − C<sub>p</sub>(B), seen from below with the nose on the left. Blue is more suction on the no-layer mesh; the signal sits where the rear tyres meet the road." source="Near-wall mesh study, slide 6" />
+      <div class="legend-row legend-row--under"><span class="mono">ΔC<sub>p</sub></span><span class="legend-bar" style={`background:${cwLegend}`}></span><span class="mono legend-ticks"><span>−0.6</span><span>0</span><span>+0.6</span></span></div>
       <StateSwitch label="Near-wall mesh" options={[{ id: 'A', label: 'A · no layer' }, { id: 'B', label: 'B · 1 prism layer' }]}>
         <div class="meshview">
-          <div data-when="A"><Image src={gapA} alt="Mesh A: tetrahedral cells in the 20 mm gap under the rear tyre, without a prism layer" widths={[600, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /></div>
-          <div data-when="B"><Image src={gapB} alt="Mesh B: the same gap with one prism layer along the tyre surface" widths={[600, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /></div>
-          <p class="meshview__cap">The 20 mm slot under the right-rear tyre, 26 cm wide. The tyre sits above the moving road so the mesh stays valid.</p>
+          <div data-when="A"><MeshSchematic variant="A" /></div>
+          <div data-when="B"><MeshSchematic variant="B" /></div>
+          <p class="meshview__cap">The 20 mm slot under the right-rear tyre, in a 26 cm window. The tyre sits above the moving road so the mesh stays valid. Schematic: gap to scale, cell size illustrative; the real cut planes are on slide 7 of the <a class="link" href="/reports/f1-study.pdf" target="_blank" rel="noopener">mesh-study PDF</a>.</p>
           <div data-when="A"><Image src={yA} alt="Mesh A y-plus map: large red areas above y+ 300, especially on the tyres" widths={[500, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /><p class="mono meshview__y">{meshStudy.yplus.A}</p></div>
           <div data-when="B"><Image src={yB} alt="Mesh B y-plus map: almost no surface above y+ 300" widths={[500, 800]} sizes="(min-width: 960px) 600px, 100vw" loading="lazy" /><p class="mono meshview__y">{meshStudy.yplus.B}</p></div>
+          <div class="yplus" role="table" aria-label="Near-wall resolution of the two meshes">
+            <div class="yplus__row" role="row"><span role="rowheader">Faces above y+ 300</span><span role="cell" class="yplus__bars"><i style="width:100%" data-active-for="A"></i><b class="mono">A 30.0%</b><i style="width:13.3%" data-active-for="B"></i><b class="mono">B 4.0%</b></span></div>
+            <div class="yplus__row" role="row"><span role="rowheader">Median y+</span><span role="cell" class="yplus__bars"><i style="width:100%" data-active-for="A"></i><b class="mono">A 231</b><i style="width:42.4%" data-active-for="B"></i><b class="mono">B 98</b></span></div>
+          </div>
           <p class="meshview__cap">Red marks y+ above 300, outside the log-law range wall functions assume. The layer fixes this almost everywhere, yet the wing and floor forces barely change.</p>
         </div>
       </StateSwitch>
@@ -101,7 +105,10 @@ const ld = [{
         <div class="tyres__view">
           {configs.map((c) => (
             <div data-when={c.id}>
-              <Image src={sideImgs[c.id]} alt={`Streamwise air speed through the front-left tyre centre, ${c.label} model, 20 m/s; orange line marks backflow`} widths={[600, 850]} sizes="(min-width: 960px) 640px, 100vw" loading="lazy" />
+              <div class="sideview">
+                <Image src={sideImgs[c.id]} alt={`Streamwise air speed through the front-left tyre centre, ${c.label} model, 20 m/s; orange line marks backflow`} widths={[600, 850]} sizes="(min-width: 960px) 640px, 100vw" loading="lazy" />
+                <span class="sideview__tag tag">{c.short}</span>
+              </div>
               <p class="tyres__note">{c.note}</p>
             </div>
           ))}
@@ -250,6 +257,16 @@ const ld = [{
   .meshview :global(img) { width: 100%; height: auto; border: 1px solid var(--ink); background: #fff; }
   .meshview__cap { font-size: 0.92rem; color: var(--ink-2); }
   .meshview__y { font-size: 0.75rem; margin-top: 0.4rem; }
+  .yplus { display: grid; gap: 0.6rem; border-top: 1px solid var(--rule); padding-top: 0.8rem; }
+  .yplus__row { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0.75rem; align-items: center; font-size: 0.85rem; }
+  .yplus__bars { display: grid; grid-template-columns: minmax(0, 1fr) 4.5rem; gap: 0.25rem 0.6rem; align-items: center; }
+  .yplus__bars i { display: block; height: 9px; background: var(--warm); transition: opacity 0.3s; }
+  .yplus__bars i[data-active-for='B'] { background: var(--cobalt); }
+  :global(state-switch[data-state]) .yplus__bars i:not(.is-active) { opacity: 0.35; }
+  .yplus__bars b { font-size: 0.72rem; font-weight: 500; }
+  .legend-row--under { margin-top: -1.25rem; }
+  .sideview { position: relative; }
+  .sideview__tag { position: absolute; left: 0; top: 0; width: 24%; height: 17.5%; min-height: 1.6rem; justify-content: flex-start; background: var(--paper); color: var(--ink); border-color: var(--ink); }
 
   .tyres { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(2rem, 4vw, 4rem); align-items: start; }
   @media (max-width: 960px) { .tyres { grid-template-columns: minmax(0, 1fr); } }

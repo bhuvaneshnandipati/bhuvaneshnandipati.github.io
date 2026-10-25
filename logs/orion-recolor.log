@@ -1,0 +1,10 @@
+orion-mach2.jpg: field 571x570px, LUT 321 rows, off-map 8.5%, body 7.9%, nose x=142px, axis y=285.5px, 47.88 px/m, mean LUT distance 2.2
+   extent x -2.97..8.96 m, y -5.94..5.96 m; capsule length 3.26 m, diameter 4.91 m
+orion-mach6.jpg: field 659x648px, LUT 321 rows, off-map 8.8%, body 8.1%, nose x=165px, axis y=328.5px, 55.14 px/m, mean LUT distance 2.5
+   extent x -2.99..8.96 m, y -5.79..5.96 m; capsule length 3.26 m, diameter 4.95 m
+orion-temperature.jpg: field 659x648px, LUT 321 rows, off-map 8.7%, body 7.9%, nose x=166px, axis y=328.5px, 55.05 px/m, mean LUT distance 3.0
+   extent x -3.02..8.96 m, y -5.80..5.97 m; capsule length 3.23 m, diameter 4.92 m
+common window x -2.97..8.96 m, y ±5.79 m
+   rendered m2: 1074x1042px at 90 px/m, value range 0.00835..2.76
+   rendered m6: 1074x1042px at 90 px/m, value range 0.00298..5.94
+   rendered t6: 1074x1042px at 90 px/m, value range 219..1.93e+03

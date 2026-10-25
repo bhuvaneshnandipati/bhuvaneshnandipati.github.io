@@ -74,3 +74,24 @@ OPEN ITEMS / NOTES
   - The Three.js chunk is about 133 KB gzipped. It loads only after the first interaction.
   - "Mechanical design and engineering automation" appears only in the practice list. No project in the
     sources documents it, so no case study was written for it.
+
+[04:00-04:20] UPDATE 2: cold-plate explorer and redrawn figures
+  - Read the owner's "Leaf-Vein Cold Plate" claude.ai artifact in full (553 lines); no tracking, links only
+    to cited sources. Ported it to /work/branching-cold-plate/explorer/ in the site's design:
+    data/coldplate-geom.ts (exact generator geometry, 252 segments), lib/coldplate-model.ts (typed port
+    of the screening model), scripts/coldplate-explorer.ts (canvas animation + readouts).
+    Verified: design point reproduces 99 Pa / 514 Pa (tree / parallel), as in the original.
+  - Cold plate: screenshot crops of the plates replaced by SVG drawn from the real geometry
+    (PlateDrawing.astro); results slide and summary slide removed (native table + native plate
+    comparison instead); home-page glyph now drawn from the real geometry.
+  - Orion: scripts/orion-recolor.py inverts each ANSYS legend colormap to recover the scalar field
+    (mean LUT error 2-3 RGB), masks the capsule, inpaints text/axis lines, and re-renders Mach 2 and
+    Mach 6 on one 90 px/m scale in M/M_inf plus the Mach 6 temperature. Checks: capsule 3.23-3.26 m long
+    (report 3.302 m) and 4.9 m across in all three exports; report shock positions agree with the
+    recovered shock within 0.05 m on the axis and 0.25 m at y = 4 m.
+    Problem: first pass merged the dark wake into the capsule mask (length read 5.8 m). Fixed by keying
+    the mask to the capsule's fill colour.
+  - F1: mesh close-up crops replaced by a schematic of mesh A/B in the 20 mm gap (gap to scale, cell size
+    illustrative, link to the real slide); y+ statistics added as native bars; baked labels on side views
+    covered by site labels; ΔCp legend added.
+  - Tests extended to the explorer (design point, slider, canvas). npm test: all passed. astro check: 0 errors.

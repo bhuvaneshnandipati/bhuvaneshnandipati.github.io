@@ -1,62 +1,45 @@
 ---
 /**
- * Schematic of the leaf-vein cold plate: 4 trunks bifurcating over six generations to
- * 128 terminal channels, widths tapering from 3.42 mm to 0.50 mm (study geometry).
- * Drawn procedurally; not the CAD geometry.
+ * The leaf-vein channel tree drawn from the generator geometry (data/coldplate-geom.ts):
+ * 4 trunks → 128 channels over six generations, true channel widths, 60 mm plate outline
+ * and 40 mm die. On hover, coolant pulses travel outward generation by generation.
  */
+import { GEOM } from '../../data/coldplate-geom';
+import { segmentGenerations } from '../../lib/coldplate-model';
+
 interface Props { size?: number; animate?: boolean }
 const { size = 240, animate = true } = Astro.props;
-const C = 120;
-const R = 92;
-const gens = 6;
-const radii = [10, 30, 48, 63, 75, 85, R];
-const wMax = 3.42, wMin = 0.5;
-const width = (g: number) => (wMax * Math.pow(wMin / wMax, g / (gens - 1))) * 1.35;
-type Seg = { x1: number; y1: number; x2: number; y2: number; w: number; g: number };
-const segs: Seg[] = [];
-const grow = (g: number, a: number, spread: number) => {
-  const r1 = radii[g], r2 = radii[g + 1];
-  const x1 = C + r1 * Math.cos(a), y1 = C + r1 * Math.sin(a);
-  const x2 = C + r2 * Math.cos(a), y2 = C + r2 * Math.sin(a);
-  segs.push({ x1, y1, x2, y2, w: width(g), g });
-  if (g + 1 < gens) {
-    grow(g + 1, a - spread / 4, spread / 2);
-    grow(g + 1, a + spread / 4, spread / 2);
-  }
-};
-for (let k = 0; k < 4; k++) {
-  const a = Math.PI / 4 + (k * Math.PI) / 2;
-  segs.push({ x1: C, y1: C, x2: C + radii[0] * Math.cos(a), y2: C + radii[0] * Math.sin(a), w: width(0), g: 0 });
-  grow(0, a, Math.PI / 2);
-}
-const r1 = (v: number) => v.toFixed(1);
-const byGen = Array.from({ length: gens }, (_, g) => segs.filter((s) => s.g === g));
-const genPath = (g: number) => byGen[g].map((s) => `M${r1(s.x1)} ${r1(s.y1)}L${r1(s.x2)} ${r1(s.y2)}`).join('');
-const staticPaths = byGen.map((_, g) => `<path d="${genPath(g)}" stroke-width="${width(g).toFixed(2)}"/>`).join('');
-const pulsePaths = byGen.map((_, g) => `<path d="${genPath(g)}" stroke-width="${(width(g) * 0.55).toFixed(2)}" style="--g:${g}"/>`).join('');
-const outlets = [0, 1, 2, 3].map((k) => {
-  const a = Math.PI / 4 + (k * Math.PI) / 2;
-  return { x: C + (R + 4) * Math.cos(a), y: C + (R + 4) * Math.sin(a) };
-});
+const s = 240 / 64; // viewBox units per mm
+const P = (v: number) => (120 + v * s).toFixed(1);
+const Q = (v: number) => (120 - v * s).toFixed(1);
+const gens = segmentGenerations();
+const nGen = GEOM.rows.length;
+const pathFor = (g: number) => GEOM.tree.filter((_, i) => gens[i] === g).map(([x1, y1, x2, y2]) => `M${P(x1)} ${Q(y1)}L${P(x2)} ${Q(y2)}`).join('');
+const widths = GEOM.rows.map((r) => r.w_mm * s);
+const staticPaths = Array.from({ length: nGen }, (_, g) => `<path d="${pathFor(g)}" stroke-width="${widths[g].toFixed(2)}"/>`).join('');
+const pulsePaths = Array.from({ length: nGen }, (_, g) => `<path d="${pathFor(g)}" stroke-width="${(widths[g] * 0.55).toFixed(2)}" style="--g:${g}"/>`).join('');
+const geo = GEOM.geo;
+const ringR = (geo.r_rim + geo.ring_w / 2) * s;
+const outlets = [0, 1, 2, 3].map((k) => { const a = Math.PI / 4 + (k * Math.PI) / 2; return { x: 120 + ringR * Math.cos(a), y: 120 + ringR * Math.sin(a) }; });
 ---
 
-<svg class:list={['glyph', 'tree', { 'tree--anim': animate }]} viewBox="0 0 240 240" width={size} height={size} role="img" aria-label="Schematic of the branching cold plate: four trunks splitting over six generations into 128 channels">
-  <rect x="6" y="6" width="228" height="228" fill="none" stroke="currentColor" stroke-opacity="0.35" />
-  <rect x="44" y="44" width="152" height="152" fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-dasharray="3 4" />
-  <circle cx={C} cy={C} r={R + 4} fill="none" stroke="currentColor" stroke-opacity="0.25" />
+<svg class:list={['glyph', 'tree', { 'tree--anim': animate }]} viewBox="0 0 240 240" width={size} height={size} role="img" aria-label="Leaf-vein cold plate drawn to scale: four trunks from a central inlet branch over six generations into 128 channels">
+  <rect x={P(-30)} y={Q(30)} width={60 * s} height={60 * s} fill="none" stroke="currentColor" stroke-opacity="0.35" />
+  <rect x={P(-20)} y={Q(20)} width={40 * s} height={40 * s} fill="none" stroke="currentColor" stroke-opacity="0.35" stroke-dasharray="3 4" />
+  <circle cx="120" cy="120" r={ringR} fill="none" stroke="currentColor" stroke-width={geo.ring_w * s} stroke-opacity="0.85" />
   <g stroke="currentColor" stroke-linecap="round" fill="none" set:html={staticPaths} />
   <g class="tree__pulse" stroke="var(--cobalt)" stroke-linecap="round" fill="none" set:html={pulsePaths} />
-  <circle cx={C} cy={C} r="7" fill="var(--paper)" stroke="currentColor" stroke-width="1.5" />
-  {outlets.map((o) => <circle cx={o.x.toFixed(1)} cy={o.y.toFixed(1)} r="5" fill="var(--paper)" stroke="currentColor" stroke-width="1.5" />)}
+  <circle cx="120" cy="120" r={(geo.d_in / 2) * s} fill="var(--paper)" stroke="currentColor" stroke-width="1.5" />
+  {outlets.map((o) => <circle cx={o.x.toFixed(1)} cy={o.y.toFixed(1)} r={(geo.d_out / 2) * s} fill="var(--paper)" stroke="currentColor" stroke-width="1.5" />)}
 </svg>
 
 <style>
-  .tree__pulse :global(path) { stroke-dasharray: 6 60; stroke-dashoffset: 66; opacity: 0; }
+  .tree__pulse :global(path) { stroke-dasharray: 5 40; stroke-dashoffset: 45; opacity: 0; }
   .tree--anim:hover .tree__pulse :global(path),
   :global(a:hover) .tree--anim .tree__pulse :global(path),
   :global(a:focus-visible) .tree--anim .tree__pulse :global(path) {
     opacity: 1;
-    animation: pulse 1.6s linear infinite;
+    animation: pulse 1.4s linear infinite;
     animation-delay: calc(var(--g) * 0.12s);
   }
   @keyframes pulse { to { stroke-dashoffset: 0; } }

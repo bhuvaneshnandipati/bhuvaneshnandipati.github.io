@@ -4,18 +4,14 @@ import CaseHeader from '../../components/CaseHeader.astro';
 import ChapterRail from '../../components/ChapterRail.astro';
 import Chapter from '../../components/Chapter.astro';
 import SpecSheet from '../../components/SpecSheet.astro';
-import StateSwitch from '../../components/StateSwitch.astro';
+import OrionFields from '../../components/OrionFields.astro';
 import LinePlot from '../../components/charts/LinePlot.astro';
 import PitotCheck from '../../components/PitotCheck.astro';
 import CaseFooter from '../../components/CaseFooter.astro';
-import { Image } from 'astro:assets';
 import { projectBySlug } from '../../data/projects';
 import { shockPoints, cpTable, freestream, mesh } from '../../data/orion';
 import { stagnationTemperature } from '../../lib/gas';
 import { fmt } from '../../lib/scale';
-import mach2 from '../../assets/img/orion-mach2.jpg';
-import mach6 from '../../assets/img/orion-mach6.jpg';
-import temp6 from '../../assets/img/orion-temperature.jpg';
 
 const p = projectBySlug('orion-capsule');
 const T0_6 = stagnationTemperature(freestream.mach6.T, 6);
@@ -24,7 +20,7 @@ const limits = [
   'No grid-convergence study: one mesh of 42,956 elements.',
   'High-temperature chemical reactions and rarefied-gas effects are left for future work.',
   'The temperature field is a flow visualization, not a validated heat-shield temperature prediction.',
-  'The two Mach-number contours use separate colour scales and plotting extents, so compare shock positions through the traced data, not the colours.',
+  'The field figures are re-rendered from the exported contour images, so local values carry the legend’s quantisation (a few percent of each legend range).',
 ];
 const ld = [{
   '@context': 'https://schema.org', '@type': 'CreativeWork', name: p.title, description: p.description,
@@ -92,14 +88,8 @@ const ld = [{
     <p class="prose">Edges were grouped into three named selections (far field, capsule body and symmetry axis) so the boundary conditions could be assigned in Fluent. Edge sizing along the capsule puts more cells in the boundary layer than the soft body sizing allows elsewhere.</p>
   </Chapter>
 
-  <Chapter id="results" n={4} tone="band" title="At Mach 6 the shock <em>moves in.</em>" intro="Along the axis, the bow shock sits 1.75 m ahead of the nose at Mach 2 and 1.25 m at Mach 6. Toggle the fields; the plot below traces the shock from the report’s Mach-number data.">
-    <StateSwitch label="Field" options={[{ id: 'm2', label: 'Mach 2' }, { id: 'm6', label: 'Mach 6' }, { id: 't6', label: 'Mach 6 · temperature' }]}>
-      <div class="fields">
-        <div data-when="m2"><Image src={mach2} alt="Mach-number contour for the Mach 2 case with a detached bow shock well ahead of the capsule" widths={[640, 1000, 1250]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 2: Mach-number contour. Original simulation figure from the final project archive.</p></div>
-        <div data-when="m6"><Image src={mach6} alt="Mach-number contour for the Mach 6 case showing the bow shock closer to the capsule" widths={[640, 1000, 1240]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 6: Mach-number contour. Its colour scale and plotting extent differ from the Mach 2 figure.</p></div>
-        <div data-when="t6"><Image src={temp6} alt="Static temperature contour for the Mach 6 case showing the heated shock layer" widths={[640, 1000, 1240]} sizes="(min-width: 1200px) 900px, 100vw" loading="lazy" /><p class="fields__cap">Mach 6: static temperature. Temperature rises through the bow shock, falls through the expansion around the shoulder and rises again through the oblique shock. A flow visualization, not a heat-shield prediction.</p></div>
-      </div>
-    </StateSwitch>
+  <Chapter id="results" n={4} tone="band" title="At Mach 6 the shock <em>moves in.</em>" intro="Along the axis, the bow shock sits 1.75 m ahead of the nose at Mach 2 and 1.25 m at Mach 6. Both fields below are drawn on one scale, with the report’s traced shock positions on top.">
+    <OrionFields />
     <div class="split split--even">
       <LinePlot
         title="Bow-shock position, traced from Mach-number data"
