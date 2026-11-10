@@ -79,14 +79,14 @@ export const claims = [
   { claim: 'Case temperature at 700 W', screening: '< 72.4 °C', cfd: '66.1 / 73.2 °C peak', verdict: 'Means sit below the ceiling on both plates. The 7.1 K gap in the peaks is heat spreading that the 1-D model cannot see.' },
   { claim: 'Loss is almost all thermal (Bejan ≈ 1)', screening: '0.99997', cfd: '0.99989', verdict: 'Holds. Friction is about 0.01% of the loss; the plate’s loss is heat crossing a temperature difference.' },
   { claim: 'Wall shear even across generations', screening: '24.6% spread', cfd: '164% spread', verdict: 'Breaks. Developing flow puts high shear at every branch entry; the developing-flow estimate was 185%.' },
-  { claim: 'Volume entropy equals boundary ledger', screening: '0.174 W/K', cfd: '−13.5% / −7.9%', verdict: 'Within the 15% coarse-grid limit. The tree sits close to it, so its entropy numbers carry that uncertainty until the grid study.' },
+  { claim: 'Volume entropy equals boundary ledger', screening: '0.174 W/K', cfd: '−13.5% / −7.9%', verdict: 'Within the 15% coarse-grid limit. The tree sits close to it, and its finer meshes missed the stricter 10% limit, so its entropy numbers carry that uncertainty.' },
 ];
 
 export const limits = [
-  'It is one coarse mesh. The 7 °C gap has to survive a finer one.',
-  'The tree’s entropy check closes at −13.5%, inside the 15% coarse-grid limit but close to it.',
+  'Grid study (Post 2): the plenum pressure ratio held at 2.2–2.3× on every mesh and with a k-ω SST turbulence model. The temperature gap did not settle: 7.1 → 8.7 → 10.0 K on finer laminar meshes, and 2.5 K with SST (no wall layers yet).',
+  'The tree’s entropy check closes at −13.5% on the coarse grid, but its medium and fine runs failed the closure gate, so finer-mesh temperatures are not yet trusted.',
   'Flow at the ports is near-turbulent, so the port-to-port pressure drop is a lower bound.',
   'Steady laminar flow, constant properties and no contact resistance.',
 ];
 
-export const next = 'A grid study and a turbulence check at the ports, to see whether the 7 °C holds.';
+export const next = 'A tree mesh that passes the closure gate on fine grids, and a wall-resolved or transitional check at the ports, to pin down the temperature advantage.';

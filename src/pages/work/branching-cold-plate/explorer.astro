@@ -19,13 +19,14 @@ const ld = [{ '@context': 'https://schema.org', '@type': 'WebApplication', name:
         <a href="/">Index</a><span aria-hidden="true">/</span><a href="/work/branching-cold-plate/">Cold plate</a><span aria-hidden="true">/</span><span aria-current="page">Explorer</span>
       </nav>
       <p class="label cx-hd__k"><span>01</span>Interactive explainer · 700 W accelerator package</p>
-      <h1 class="cx-hd__title">Same copper, same water, same wetted area.<br /><em>The tree pumps easier and runs 7 K cooler.</em></h1>
-      <p class="lede cx-hd__lede">A leaf-vein channel tree, laid out by a generalised Murray’s law, against 30 straight channels. Both plates hold <b>2,084 mm³ of water</b> and wet <b>8,561 mm² of copper</b>. The coarse-grid conjugate run says the cheaper flow path also runs cooler: <b>2.3× less pressure drop</b> across the channel network and a <b>7.1 K lower peak case temperature</b> at 700 W.</p>
+      <h1 class="cx-hd__title">Same copper, same water, same wetted area.<br /><em>The tree pumps 2.3× easier on every mesh, and runs cooler.</em></h1>
+      <p class="lede cx-hd__lede">A leaf-vein channel tree, laid out by a generalised Murray’s law, against 30 straight channels. Both plates hold <b>2,084 mm³ of water</b> and wet <b>8,561 mm² of copper</b>. The coarse-grid conjugate run says the cheaper flow path also runs cooler: <b>2.3× less pressure drop</b> across the channel network and a <b>7.1 K lower peak case temperature</b> at 700 W. The grid study since then kept the 2.3× on every mesh, but the size of the temperature gap is not settled yet (it changed on every finer mesh, and the finest tree runs failed the closure check).</p>
       <ul class="cx-status mono">
         <li class="is-done">Geometry built and checked</li>
         <li class="is-done">1-D screening model live below</li>
         <li class="is-done">Conjugate CFD, coarse grid: 8/8 gates on both plates</li>
-        <li class="is-next">Next: grid study and turbulence check</li>
+        <li class="is-done">Grid study and SST port check: 2.3× Δp holds; temperature gap unsettled</li>
+        <li class="is-next">Next: closure-passing fine tree mesh</li>
       </ul>
     </header>
 
@@ -89,7 +90,7 @@ const ld = [{ '@context': 'https://schema.org', '@type': 'WebApplication', name:
 
     <section class="wrap cx-blk" aria-labelledby="cx2">
       <header class="cx-blk__hd"><span class="cx-n mono">02</span><h2 id="cx2">Temperature: equal in 1-D, not in the CFD</h2>
-        <p>Matched wetted area means matched conductance in a 1-D model. Any temperature gap between the plates has to come from what the 1-D model leaves out. The CFD found one: 7.1 K at the peak.</p></header>
+        <p>Matched wetted area means matched conductance in a 1-D model. Any temperature gap between the plates has to come from what the 1-D model leaves out. The coarse-grid CFD found one: 7.1 K at the peak.</p></header>
       <div class="cx-grid2">
         <div class="cx-card">
           <h3>Case temperature, built up from the inlet</h3>
@@ -168,7 +169,7 @@ const ld = [{ '@context': 'https://schema.org', '@type': 'WebApplication', name:
         </div>
       </div>
       <div class="cx-card cx-bottom">
-        <p><b>Bottom line.</b> The 1-D model said the plates were identical on temperature. The coarse-grid CFD says the tree’s hottest spot sits 7.1 K closer to the inlet water (26.1 K above it against 33.2 K) at the same flow, volume and wetted area. In a facility, that is the number that pays: those kelvins can go into warmer supply water and more chiller-free hours. The pressure saving (2.3× at the plate, 4.6× port to port) mostly buys pressure budget, not energy. The grid study decides how much of the 7 K survives refinement.</p>
+        <p><b>Bottom line.</b> The 1-D model said the plates were identical on temperature. The coarse-grid CFD says the tree’s hottest spot sits 7.1 K closer to the inlet water (26.1 K above it against 33.2 K) at the same flow, volume and wetted area. In a facility, that is the number that pays: those kelvins can go into warmer supply water and more chiller-free hours. The pressure saving (2.3× at the plate, 4.6× port to port) mostly buys pressure budget, not energy. The grid study did not settle it: the gap grew to 8.7 and 10.0 K on finer laminar meshes, fell to 2.5 K with an SST turbulence model, and the two finest tree runs failed the closure gate.</p>
       </div>
       <details class="cx-src">
         <summary>Sources for the facts in this section</summary>
@@ -189,7 +190,7 @@ const ld = [{ '@context': 'https://schema.org', '@type': 'WebApplication', name:
         <p>Claims stated before the run were answered by the coarse-grid conjugate run of 9 October 2026 in OpenFOAM v2512. The full results, the eight acceptance gates and the claim-by-claim verdicts are in the case study.</p></header>
       <a class="btn btn--solid cx-back" href="/work/branching-cold-plate/#results">Open the CFD results <span class="arrow" aria-hidden="true">→</span></a>
       <ul class="cx-notes">
-        <li>Sections 01–04 and the sliders use the Milestone 1 screening model (ported from <span class="mono">murray_schedule.py</span>). CFD figures quoted in the text come from the coarse-grid conjugate run, which is one grid level; the grid study tests them on finer meshes.</li>
+        <li>Sections 01–04 and the sliders use the Milestone 1 screening model (ported from <span class="mono">murray_schedule.py</span>). CFD figures quoted in the text come from the coarse-grid conjugate run, which is one grid level. The grid study since then held the 2.3× pressure ratio on finer meshes but not the size of the temperature gap.</li>
         <li>Assumptions: laminar flow (generation-1 Re <span class="mono" id="reG1">{fmt(t.gens[0].Re)}</span>, port Re <span class="mono" id="rePort"></span>; flow in the channels never fully develops), constant water properties at 45 °C, no contact resistance, Nu = 4.5.</li>
         <li>Plates are drawn from the same signed-distance primitives that generate the meshed STL surfaces.</li>
       </ul>

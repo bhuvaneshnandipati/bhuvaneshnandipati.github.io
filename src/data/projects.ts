@@ -28,15 +28,15 @@ export const projects: Project[] = [
     tools: ['OpenFOAM v2512', 'chtMultiRegionSimpleFoam'],
     standfirst:
       'A leaf-vein channel tree, laid out by a generalised Murray’s law, against 30 straight channels. Same copper, same water, same wetted area, one 700 W accelerator.',
-    headline: { value: '−7.1', unit: 'K', label: 'peak case temperature, tree vs. parallel' },
-    status: 'Coarse grid · refinement pending',
+    headline: { value: '2.3', unit: '×', label: 'lower plenum pressure drop, tree vs. parallel, held on every mesh' },
+    status: 'Grid study done · temperature gap not yet grid-converged',
     evidence: {
       label: 'Conservation checks',
       value: '8 / 8',
       note: 'Mass, energy, flow rate, mesh quality and entropy closure passed on both plates before any number was used.',
     },
     description:
-      'Conjugate heat-transfer CFD comparing a Murray-law branching cold plate with a 30-channel baseline for a 700 W accelerator: 7.1 K lower peak case temperature and 57% lower plenum pressure drop on a coarse grid.',
+      'Conjugate heat-transfer CFD comparing a Murray-law branching cold plate with a 30-channel baseline for a 700 W accelerator: about 2.3× lower plenum pressure drop on every mesh in a grid study, and a cooler peak case temperature in every run (7.1 K on the coarse grid; the size is not yet grid-converged).',
   },
   {
     slug: 'f1-tyre-road',
