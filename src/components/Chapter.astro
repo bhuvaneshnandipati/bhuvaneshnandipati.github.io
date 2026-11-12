@@ -1,7 +1,7 @@
 ---
-interface Props { id: 'problem' | 'method' | 'simulation' | 'results' | 'insight'; n: number; title: string; intro?: string; tone?: 'paper' | 'band' }
+interface Props { id: 'problem' | 'method' | 'simulation' | 'results' | 'insight' | 'followup'; n: number; title: string; intro?: string; tone?: 'paper' | 'band' }
 const { id, n, title, intro, tone = 'paper' } = Astro.props;
-const names = { problem: 'Problem', method: 'Method', simulation: 'Simulation', results: 'Results', insight: 'Insight' };
+const names = { problem: 'Problem', method: 'Method', simulation: 'Simulation', results: 'Results', insight: 'Insight', followup: 'Follow-up' };
 ---
 
 <section class:list={['chap', `chap--${tone}`]} id={id} aria-labelledby={`${id}-title`}>

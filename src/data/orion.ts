@@ -22,3 +22,16 @@ export const freestream = {
 };
 
 export const mesh = { elements: 42956, nodes: 43481, minEdge: 0.00509, bodySizing: 0.004, edgeSizing: 0.002 };
+
+/**
+ * 2026 independent follow-up in OpenFOAM: intact-shield baseline at the NASA LaRC 20-Inch Mach 6 Air Tunnel
+ * condition. Values from Table 1 of the author's conference abstract (finalized 2026-11-12).
+ */
+export const rebuild2026 = {
+  cpExact: 1.8181,
+  grids: [
+    { grid: 'Coarse', cells: 19460, cp: 1.8153, err: '−0.15', standoff: 28.54 },
+    { grid: 'Medium', cells: 43950, cp: 1.8196, err: '+0.08', standoff: 28.57 },
+    { grid: 'Fine', cells: 99000, cp: 1.8217, err: '+0.20', standoff: 28.58 },
+  ],
+};

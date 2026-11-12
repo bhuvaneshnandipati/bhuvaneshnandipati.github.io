@@ -63,19 +63,19 @@ export const projects: Project[] = [
     index: '03',
     title: 'Orion capsule aerodynamics',
     discipline: 'Compressible flow · Re-entry',
-    context: 'Team course project · Gas Dynamics, BITS Pilani',
-    tools: ['ANSYS Fluent', 'ANSYS Meshing', 'SpaceClaim'],
+    context: 'Team course project · Gas Dynamics, BITS Pilani; independent OpenFOAM follow-up, 2026',
+    tools: ['ANSYS Fluent', 'ANSYS Meshing', 'SpaceClaim', 'OpenFOAM (rhoCentralFoam)'],
     standfirst:
-      'An axisymmetric Orion-like capsule at Mach 2 and Mach 6: where the bow shock stands, how the surface pressure falls away, and what changes when the flow turns hypersonic.',
+      'An axisymmetric Orion-like capsule at Mach 2 and Mach 6: where the bow shock stands, how the surface pressure falls away, and what changes when the flow turns hypersonic. A 2026 OpenFOAM rerun at a NASA wind-tunnel condition checks the Mach 6 case on three grids.',
     headline: { value: 'M 2 → 6', label: 'supersonic and hypersonic cases, 0° angle of attack' },
-    status: 'Qualitative validation',
+    status: 'Qualitative validation · 2026 Mach 6 rerun: pressure and shock verified on three grids, heating not yet grid-converged',
     evidence: {
       label: 'Stagnation check',
       value: '0.02%',
       note: 'Simulated stagnation-point Cp at Mach 2 against the Rayleigh pitot relation, computed for this site. Mach 6 sits 1.8% above it.',
     },
     description:
-      'ANSYS Fluent study of supersonic (Mach 2) and hypersonic (Mach 6) flow over an axisymmetric Orion-like re-entry capsule: bow-shock position, surface pressure coefficient and the shock layer.',
+      'ANSYS Fluent study of supersonic (Mach 2) and hypersonic (Mach 6) flow over an axisymmetric Orion-like re-entry capsule: bow-shock position, surface pressure coefficient and the shock layer, with a 2026 OpenFOAM Mach 6 baseline whose stagnation pressure is within 0.2% of theory on three grids.',
   },
 ];
 

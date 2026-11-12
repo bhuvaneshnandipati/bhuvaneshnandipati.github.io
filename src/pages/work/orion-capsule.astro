@@ -9,15 +9,16 @@ import LinePlot from '../../components/charts/LinePlot.astro';
 import PitotCheck from '../../components/PitotCheck.astro';
 import CaseFooter from '../../components/CaseFooter.astro';
 import { projectBySlug } from '../../data/projects';
-import { shockPoints, cpTable, freestream, mesh } from '../../data/orion';
+import { shockPoints, cpTable, freestream, mesh, rebuild2026 } from '../../data/orion';
 import { stagnationTemperature } from '../../lib/gas';
 import { fmt } from '../../lib/scale';
 
 const p = projectBySlug('orion-capsule');
 const T0_6 = stagnationTemperature(freestream.mach6.T, 6);
 const limits = [
-  'The Cp comparison with published curves is qualitative; the report gives no quantified validation error.',
-  'No grid-convergence study: one mesh of 42,956 elements.',
+  'The course project’s Cp comparison with published curves is qualitative; the report gives no quantified validation error.',
+  'The original Fluent run has no grid-convergence study: one mesh of 42,956 elements. The 2026 OpenFOAM baseline adds one for pressure and shock standoff.',
+  'In the 2026 baseline, stagnation heating is not yet grid-converged: it fell 28% from the coarse to the medium grid and a further 18% on the fine grid. A wall-spacing study is in progress, so no absolute heating value is shown.',
   'High-temperature chemical reactions and rarefied-gas effects are left for future work.',
   'The temperature field is a flow visualization, not a validated heat-shield temperature prediction.',
   'The field figures are re-rendered from the exported contour images, so local values carry the legend’s quantisation (a few percent of each legend range).',
@@ -25,7 +26,7 @@ const limits = [
 const ld = [{
   '@context': 'https://schema.org', '@type': 'CreativeWork', name: p.title, description: p.description,
   author: [{ '@type': 'Person', name: 'Sai Bhuvanesh Nandipati' }, { '@type': 'Person', name: 'Patil Saurav Sachin' }, { '@type': 'Person', name: 'Sumedh Shirish Kulkarni' }, { '@type': 'Person', name: 'Gaurav Sharma' }],
-  keywords: 'hypersonic flow, supersonic flow, bow shock, ANSYS Fluent, re-entry capsule',
+  keywords: 'hypersonic flow, supersonic flow, bow shock, ANSYS Fluent, OpenFOAM, rhoCentralFoam, grid convergence, re-entry capsule',
 }];
 ---
 
@@ -58,7 +59,7 @@ const ld = [{
   <Chapter id="method" n={2} tone="band" title="Axisymmetric, <em>density-based, real-gas properties.</em>" intro="The capsule is symmetric about its axis, so it was modelled as a 2-D axisymmetric case. Geometry follows Votta et al. (2009), Journal of Spacecraft and Rockets.">
     <div class="split split--even">
       <SpecSheet title="Geometry and domain" rows={[
-        { k: 'CAD', v: 'SpaceClaim, 2-D axisymmetric negative of the capsule' },
+        { k: 'Geometry', v: 'SpaceClaim, 2-D axisymmetric negative of the capsule' },
         { k: 'Upstream', v: 'Inlet boundary 3 m ahead of the body' },
         { k: 'Downstream', v: 'Outlet boundary 5.7 m behind the body' },
         { k: 'Boundaries', v: 'Pressure far-field; wall on the capsule; symmetry axis' },
@@ -122,6 +123,7 @@ const ld = [{
       <div class="prose">
         <p><strong>Mach 2 matches to 0.02%.</strong> The simulated nose C<sub>p</sub> of 1.657 against a theoretical 1.6573 is a good sign that the far-field conditions, the shock capture and the reference values were set up consistently.</p>
         <p><strong>Mach 6 sits 1.8% above it</strong>, and above the γ = 1.4 hypersonic limit of 1.839. A plausible reason, not tested in the report: the setup uses a temperature-dependent specific heat, and behind a Mach 6 shock the gas is hot (the freestream stagnation temperature is about {fmt(T0_6)} K for a calorically perfect gas). A lower effective γ raises the stagnation pressure coefficient toward 2.</p>
+        <p><strong>The 2026 rerun fits that reading.</strong> With a constant γ = 1.4 perfect gas, the OpenFOAM baseline below lands within 0.2% of the same relation on three grids. The two setups also differ in turbulence model and freestream temperature, so this is consistent evidence, not a controlled test.</p>
         <p>The report’s own conclusion holds across every field: the bow shock, expansion, oblique shock and vortices all sit closer to the body at Mach 6, and the entropy layer and turbulent dissipation are much more pronounced.</p>
       </div>
       <aside class="credit">
@@ -133,7 +135,41 @@ const ld = [{
     </div>
   </Chapter>
 
-  <CaseFooter current={p} limits={limits} next="Model high-temperature chemistry and rarefied-gas effects, the report’s stated future work, and add a grid-convergence study." />
+  <Chapter id="followup" n={6} tone="band" title="2026: Mach 6 again, <em>verified on three grids.</em>" intro="An independent follow-up: an Orion-type crew module rebuilt from scratch in OpenFOAM at the NASA Langley 20-Inch Mach 6 Air Tunnel condition, with the intact shield checked on three systematically refined grids before any new question is asked of it.">
+    <div class="split split--even">
+      <SpecSheet title="OpenFOAM setup" rows={[
+        { k: 'Model', v: '7-inch (0.1778 m) Orion-type crew module, axisymmetric, 0° angle of attack' },
+        { k: 'Freestream', v: 'M∞ = 6.0, Re∞ = 3.2 × 10⁶ per ft, T∞ = 63 K' },
+        { k: 'Wall', v: '300 K' },
+        { k: 'Physics', v: 'Laminar, perfect-gas Navier–Stokes' },
+        { k: 'Solver', v: 'rhoCentralFoam with the Kurganov–Noelle–Petrova central-upwind flux' },
+        { k: 'Steady when', v: 'Heat load and peak heat flux change by less than 0.2%, and forebody drag by less than 0.1%, over 3,000 iterations' },
+      ]} />
+      <div class="xtable-wrap" tabindex="0" role="region" aria-label="Baseline grid study table">
+        <table class="xtable">
+          <caption class="label mute">Intact-shield baseline on three grids</caption>
+          <thead><tr><th scope="col">Grid</th><th scope="col">Cells</th><th scope="col">Cp,stag</th><th scope="col">vs exact {rebuild2026.cpExact}</th><th scope="col">Shock standoff</th></tr></thead>
+          <tbody>
+            {rebuild2026.grids.map((g) => <tr><th scope="row">{g.grid}</th><td class="mono">{fmt(g.cells)}</td><td class="mono">{g.cp.toFixed(4)}</td><td class="mono">{g.err}%</td><td class="mono">{g.standoff.toFixed(2)} mm</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="split followup">
+      <div class="prose">
+        <p><strong>Pressure and shock position hold on every grid.</strong> Stagnation-point C<sub>p</sub> stays within 0.2% of the exact Rayleigh pitot value, and the shock standoff moves by 0.04 mm from the coarsest grid to the finest.</p>
+        <p><strong>Heating does not converge yet, and the page says so.</strong> Stagnation heat flux fell 28% from the coarse to the medium grid and a further 18% on the fine grid. A wall-spacing study is under way; until it settles the level, no absolute heating number goes here.</p>
+        <p><strong>Two checks shaped the method.</strong> Comparing against a separately generated mesh put a 13% heat-flux difference upstream of the region of interest, entirely from the meshes; reference meshes that match cell for cell brought it below 2%. The first outer boundary also sat inside the bow shock aft of the shoulder, so it was moved out using a Billig-form fit to the computed shock.</p>
+      </div>
+      <aside class="credit">
+        <p class="label mute">What the baseline is for</p>
+        <p>It is the reference for a study of char-loss-type pockets on the heat-shield face, the kind of material loss found on Orion after Artemis I. Each pocket is compared with a matched intact mesh. Those results will be posted here with the paper.</p>
+        <p class="mono mute">Independent work · Sai Bhuvanesh Nandipati</p>
+      </aside>
+    </div>
+  </Chapter>
+
+  <CaseFooter current={p} limits={limits} next="Finish the wall-spacing study so heating can be stated with a verified uncertainty, then post the char-loss pocket results with the paper. High-temperature chemistry and rarefied-gas effects, the course report’s stated future work, remain open." />
 </Base>
 
 <style>
@@ -164,4 +200,5 @@ const ld = [{
 
   .credit { display: grid; gap: 0.75rem; padding: clamp(1.25rem, 2.5vw, 2rem); border: 1px solid var(--ink); }
   .credit ul { list-style: none; display: grid; gap: 0.3rem; font-size: 0.85rem; }
+  .followup { margin-top: clamp(2rem, 4vw, 3.5rem); }
 </style>
